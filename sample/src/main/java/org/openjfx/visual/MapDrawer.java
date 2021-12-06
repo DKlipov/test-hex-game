@@ -5,6 +5,8 @@ import javafx.scene.paint.Color;
 import lombok.Getter;
 
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -26,6 +28,8 @@ public class MapDrawer {
 
     private final GraphicsContext gc;
 
+    private static final int OFFSET = 3;
+
     private final int windowHeight;
     private final int windowWidth;
     private final int mapRows;
@@ -43,7 +47,7 @@ public class MapDrawer {
         this.cellStyleProvider = cellStyleProvider;
         this.minSize = Math.max((int) Math.ceil(windowHeight / ((mapRows + 1) * SIN[1]) / 2), 1);
         this.maxSize = (int) Math.floor(windowHeight / SIN[1] / 6);
-        this.size = 10;
+        this.size = minSize;
     }
 
     @Getter
@@ -68,8 +72,6 @@ public class MapDrawer {
             y -= COS30 * size;
         }
         int resultY = (int) Math.floor(y / (COS30 * size * 2));
-        System.out.println(resultX);
-        System.out.println(resultY);
         return new Point(getCellColumn(resultX), resultY);
     }
 
@@ -86,7 +88,7 @@ public class MapDrawer {
             int newCY = oldCY * size / oldSize;
             int newY = newCY - windowHeight / 2;
             setCursorY(newY);
-            int oldCX = windowWidth / 2 - cursorX;
+            int oldCX = cursorX - windowWidth / 2;
             int newCX = oldCX * size / oldSize;
             int newX = newCX + windowWidth / 2;
             setCursorX(newX);
@@ -132,6 +134,10 @@ public class MapDrawer {
     private void drawGrid(GraphicsContext gc, double startX, double startY, int r) {
         double x = startX;
         double y;
+        boolean defaultBorders = false;
+        if (size > 6) {
+            defaultBorders = true;
+        }
 
         int columnNumber = 0;
         if (x > -size - size) {
@@ -141,22 +147,22 @@ public class MapDrawer {
         }
 
         while (true) {
-            if (columnNumber % 2 != 0) {
-                y = -startY - (2 * r * SIN[1]);
-            } else {
+            if (columnNumber % 2 == 0) {
                 y = -startY - (r * SIN[1]);
+            } else {
+                y = -startY - (2 * r * SIN[1]);
             }
             gc.setFill(Color.WHITE);
-            drawHex(gc, x, y, r);
+            drawHex(gc, x, y, defaultBorders, null);
             y = y + 2 * r * SIN[1];
             for (int j = 0; j < mapRows; j++) {
-                gc.setFill(cellStyleProvider.getColor(columnNumber, j));
-                gc.setStroke(Color.BLACK);
-                drawHex(gc, x, y, r);
+                CellStyle style = cellStyleProvider.getStyle(columnNumber, j);
+                gc.setFill(style.getFill());
+                drawHex(gc, x, y, defaultBorders, style.getBorders());
                 y = y + 2 * r * SIN[1];
             }
             gc.setFill(Color.WHITE);
-            drawHex(gc, x, y, r);
+            drawHex(gc, x, y, defaultBorders, null);
             x += r * (1 + COS[1]);
             if (x > windowWidth + size) {
                 return;
@@ -168,27 +174,45 @@ public class MapDrawer {
         }
     }
 
-    private void drawHex(GraphicsContext gc, double startX, double startY, int r) {
+    private final static int[] xDiff = new int[]{0, -2, -2, 0, 2, 2};
+    private final static int[] yDiff = new int[]{2, 2, -2, -2, -2, 2};
+
+    private void drawHex(GraphicsContext gc, double startX, double startY,
+                         boolean defaultBorders, Color[] borders) {
         if (startY < -size - size || startY > windowHeight
                 || startX < -size - size || startX > windowWidth + size) {
             return;
         }
         double x = startX;
         double y = startY;
-        double[] xArray = new double[6];
-        double[] yArray = new double[6];
+        double[] xArray = new double[7];
+        double[] yArray = new double[7];
         for (var i = 0; i < 6; i++) {
-            double newX = x + r * COS[i];
-            double newY = y + r * SIN[i];
-            xArray[i] = newX;
-            yArray[i] = newY;
+            double newX = x + size * COS[i];
+            double newY = y + size * SIN[i];
+            xArray[i] = x;
+            yArray[i] = y;
             x = newX;
             y = newY;
         }
-        if (size > 6) {
+        xArray[6] = x;
+        yArray[6] = y;
+        gc.fillPolygon(xArray, yArray, 6);
+        if (borders != null) {
+            gc.setLineWidth(4);
+            for (var i = 0; i < 6; i++) {
+                var color = borders[i];
+                if (color != null) {
+                    gc.setStroke(color);
+                    gc.strokeLine(xArray[i] + xDiff[i], yArray[i] + yDiff[i], xArray[i + 1] + xDiff[i], yArray[i + 1] + yDiff[i]);
+                }
+            }
+        }
+        if (defaultBorders) {
+            gc.setLineWidth(0.5);
+            gc.setStroke(Color.BLACK);
             gc.strokePolygon(xArray, yArray, 6);
         }
-        gc.fillPolygon(xArray, yArray, 6);
     }
 
 }

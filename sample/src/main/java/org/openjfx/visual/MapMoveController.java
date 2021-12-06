@@ -2,7 +2,9 @@ package org.openjfx.visual;
 
 import javafx.animation.AnimationTimer;
 import javafx.scene.Scene;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.ScrollEvent;
+import org.openjfx.controls.SpeedPane;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -18,21 +20,16 @@ public class MapMoveController {
     private double lastX = 0d;
     private double lastY = 0d;
     private int mouseAwaitTime = 0;
-    private CellStyleProviderImpl styleProvider;
+    private CellStyleProvider styleProvider;
+    private final SpeedPane speedPane;
 
-    public MapMoveController(MapDrawer mapDrawer, Scene scene, CellStyleProviderImpl styleProvider) {
+    public MapMoveController(MapDrawer mapDrawer, Scene scene, CellStyleProvider styleProvider, SpeedPane speedPane) {
+        this.speedPane = speedPane;
         this.mapDrawer = mapDrawer;
         this.millis = Instant.now().toEpochMilli() * 1000;
         this.styleProvider = styleProvider;
-        scene.setOnKeyPressed(event -> {
-            String codeString = event.getCode().toString();
-            if (!currentlyActiveKeys.containsKey(codeString)) {
-                currentlyActiveKeys.put(codeString, true);
-            }
-        });
-        scene.setOnKeyReleased(event ->
-                currentlyActiveKeys.remove(event.getCode().toString())
-        );
+        scene.addEventFilter(KeyEvent.KEY_PRESSED, this::keyPressed);
+        scene.setOnKeyReleased(event -> currentlyActiveKeys.remove(event.getCode().toString()));
         scene.setOnScroll((ScrollEvent event) -> {
             int index = mapDrawer.getSize() / 5;
             if (index <= 0) {
@@ -45,19 +42,13 @@ public class MapMoveController {
             }
 
         });
-        scene.setOnMouseMoved(event -> {
-            synchronized (mouseMonitor) {
-                lastX = event.getX();
-                lastY = event.getY();
-                mouseAwaitTime = -1;
-            }
-            String msg =
-                    "(x: " + event.getX() + ", y: " + event.getY() + ") -- " +
-                            "(sceneX: " + event.getSceneX() + ", sceneY: " + event.getSceneY() + ") -- " +
-                            "(screenX: " + event.getScreenX() + ", screenY: " + event.getScreenY() + ")";
-
-            System.out.println(msg);
-        });
+//        scene.setOnMouseMoved(event -> {
+//            synchronized (mouseMonitor) {
+//                lastX = event.getX();
+//                lastY = event.getY();
+//                mouseAwaitTime = -1;
+//            }
+//        });
         var timer = new AnimationTimer() {
             @Override
             public void handle(long now) {
@@ -67,23 +58,35 @@ public class MapMoveController {
         timer.start();
     }
 
+    private void keyPressed(KeyEvent event) {
+        String codeString = event.getCode().toString();
+        if (!currentlyActiveKeys.containsKey(codeString)) {
+            currentlyActiveKeys.put(codeString, true);
+        }
+        if (codeString.equals("SPACE")) {
+            speedPane.setSpeed(0);
+        }
+    }
+
     private void checkMouseMoved(int diffMillis) {
         synchronized (mouseMonitor) {
             if (mouseAwaitTime < 0) {
                 mouseAwaitTime = 0;
-                styleProvider.setAwaitedCell(null);
-                return;
-            } else if (styleProvider.getAwaitedCell() != null) {
+                //styleProvider.setAwaitedCell(null);
                 return;
             }
+//            else if (styleProvider.getAwaitedCell() != null) {
+//                return;
+//            }
             mouseAwaitTime += diffMillis;
             if (mouseAwaitTime > 1000) {
-                styleProvider.setAwaitedCell(mapDrawer.getCell(lastX, lastY));
+                //styleProvider.setAwaitedCell(mapDrawer.getCell(lastX, lastY));
             }
         }
     }
 
     private void moveMap(long now) {
+        speedPane.redraw();
         long diff = now - millis;
         millis = now;
         checkMouseMoved((int) (diff / 1000000));
