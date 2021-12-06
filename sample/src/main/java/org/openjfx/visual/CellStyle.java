@@ -8,5 +8,6 @@ import lombok.Data;
 @AllArgsConstructor
 public class CellStyle {
     private Color fill;
+    private Color border;
     private Color[] borders;
 }

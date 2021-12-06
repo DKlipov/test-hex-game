@@ -32,7 +32,7 @@ public class CachedStyleProvider implements CellStyleProvider {
     private void updateCache() {
         for (int i = 0; i < mapColumns; i++) {
             for (int j = 0; j < mapRows; j++) {
-                styles.get(i).set(j, new CellStyle(provider.getColor(i, j), provider.getBordersColor(i, j)));
+                styles.get(i).set(j, provider.getStyle(i, j));
             }
         }
     }

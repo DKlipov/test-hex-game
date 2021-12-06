@@ -1,5 +1,6 @@
 package org.openjfx;
 
+import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.scene.Group;
@@ -20,6 +21,8 @@ import org.openjfx.utils.Clocker;
 import org.openjfx.visual.*;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * JavaFX App
@@ -42,9 +45,11 @@ public class App extends Application {
         GraphicsContext gc = canvas.getGraphicsContext2D();
         new Clocker();
 
+        AnimationTimerDecorator animationTimer = new AnimationTimerDecorator();
         var dataStorage = new DataStorage();
         SpeedPane pane = new SpeedPane(LocalDate.now());
-        var styleProvider = new CachedStyleProvider(mapRows, mapColumns, new CellStyleProviderImpl(dataStorage,mapColumns));
+        animationTimer.addAnimation(pane);
+        var styleProvider = new CachedStyleProvider(mapRows, mapColumns, new CellStyleProviderImpl(dataStorage, mapColumns));
         mapDrawer = new MapDrawer(gc, windowHeight, windowWidth, mapRows, mapColumns, styleProvider);
         mapDrawer.redrawMap();
 
@@ -61,8 +66,12 @@ public class App extends Application {
 
         var thread = new TimeThread(pane, new TimelineEventLoop());
         primaryStage.setScene(scene);
-        MapMoveController moveController = new MapMoveController(mapDrawer, scene, styleProvider, pane);
+        InteractiveMap interactiveMap = new InteractiveMap(mapDrawer);
+        MapMoveController moveController = new MapMoveController(windowWidth, windowHeight, mapDrawer, scene, interactiveMap);
+        animationTimer.addAnimation(moveController);
         primaryStage.show();
+
+        animationTimer.start();
     }
 
 

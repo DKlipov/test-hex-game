@@ -157,8 +157,13 @@ public class MapDrawer {
             y = y + 2 * r * SIN[1];
             for (int j = 0; j < mapRows; j++) {
                 CellStyle style = cellStyleProvider.getStyle(columnNumber, j);
-                gc.setFill(style.getFill());
-                drawHex(gc, x, y, defaultBorders, style.getBorders());
+                if (!defaultBorders && style.getBorders() != null) {
+                    gc.setFill(style.getBorder());
+                    drawHex(gc, x, y, defaultBorders, null);
+                } else {
+                    gc.setFill(style.getFill());
+                    drawHex(gc, x, y, defaultBorders, style.getBorders());
+                }
                 y = y + 2 * r * SIN[1];
             }
             gc.setFill(Color.WHITE);

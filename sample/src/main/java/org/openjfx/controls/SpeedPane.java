@@ -10,11 +10,12 @@ import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
 import lombok.Getter;
+import org.openjfx.visual.AnimatedComponent;
 
 import java.time.LocalDate;
 import java.util.Map;
 
-public class SpeedPane implements Control {
+public class SpeedPane implements Control, AnimatedComponent {
     private final HBox hbox;
 
     @Getter
@@ -47,7 +48,7 @@ public class SpeedPane implements Control {
         hbox.setMinWidth(100);
     }
 
-    public void redraw(){
+    private void redraw() {
         speedButton.setText(icons.get(this.speed));
         label.setText(date.toString());
     }
@@ -66,5 +67,10 @@ public class SpeedPane implements Control {
     @Override
     public Node getNode() {
         return hbox;
+    }
+
+    @Override
+    public void update(long now, long frameTimeDiff) {
+        redraw();
     }
 }

@@ -22,7 +22,9 @@ public class CellStyleProviderImpl implements CellStyleProvider {
 
     @Override
     public CellStyle getStyle(int x, int y) {
-        return new CellStyle(getColor(x, y), getBordersColor(x, y));
+        return new CellStyle(getColor(x, y),
+                getColor(x, y).deriveColor(0, 1.0, 0.7, 1.0),
+                getBordersColor(x, y));
     }
 
     public Color getColor(int x, int y) {

@@ -39,4 +39,7 @@ public class InteractiveMap {
     public void cellHovered(int x, int y) {
 
     }
+
+    public void clearCellHover() {
+    }
 }
