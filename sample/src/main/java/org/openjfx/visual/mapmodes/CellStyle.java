@@ -1,4 +1,4 @@
-package org.openjfx.visual;
+package org.openjfx.visual.mapmodes;
 
 import javafx.scene.paint.Color;
 import lombok.AllArgsConstructor;

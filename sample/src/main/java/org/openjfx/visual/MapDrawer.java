@@ -3,10 +3,10 @@ package org.openjfx.visual;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import lombok.Getter;
+import org.openjfx.visual.mapmodes.CellStyle;
+import org.openjfx.visual.mapmodes.CellStyleProvider;
 
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 

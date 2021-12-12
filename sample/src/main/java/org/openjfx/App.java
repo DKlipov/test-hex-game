@@ -1,28 +1,34 @@
 package org.openjfx;
 
-import javafx.animation.AnimationTimer;
 import javafx.application.Application;
-import javafx.geometry.Insets;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
 import javafx.stage.Stage;
-import org.openjfx.controls.CountrySelector;
+import org.openjfx.controls.ItemSelector;
 import org.openjfx.controls.SpeedPane;
 import org.openjfx.map.DataStorage;
+import org.openjfx.map.Nation;
+import org.openjfx.map.Population;
+import org.openjfx.map.Terrain;
+import org.openjfx.map.economy.Resource;
+import org.openjfx.timeline.InitialMigration;
 import org.openjfx.timeline.TimeThread;
 import org.openjfx.timeline.TimelineEventLoop;
+import org.openjfx.utils.CellUtils;
 import org.openjfx.utils.Clocker;
 import org.openjfx.visual.*;
+import org.openjfx.visual.editors.MapEditor;
+import org.openjfx.visual.mapmodes.*;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /**
  * JavaFX App
@@ -32,8 +38,8 @@ public class App extends Application {
 
     private int windowHeight = 640;
     private int windowWidth = 880;
-    private int mapRows = 65;
-    private int mapColumns = 80;
+    public static final int mapRows = 65;
+    public static final int mapColumns = 80;
 
     private MapDrawer mapDrawer;
 
@@ -45,28 +51,53 @@ public class App extends Application {
         GraphicsContext gc = canvas.getGraphicsContext2D();
         new Clocker();
 
+        InteractiveMap interactiveMap = new InteractiveMap();
+
         AnimationTimerDecorator animationTimer = new AnimationTimerDecorator();
         var dataStorage = new DataStorage();
         SpeedPane pane = new SpeedPane(LocalDate.now());
         animationTimer.addAnimation(pane);
-        var styleProvider = new CachedStyleProvider(mapRows, mapColumns, new CellStyleProviderImpl(dataStorage, mapColumns));
-        mapDrawer = new MapDrawer(gc, windowHeight, windowWidth, mapRows, mapColumns, styleProvider);
+        interactiveMap.addKeyListener("SPACE", () -> pane.setSpeed(0));
+
+        var defaultProvider = new PoliticalMode(dataStorage, mapColumns);
+        var cachedProvider = new CachedStyleProvider(mapRows, mapColumns, defaultProvider);
+        Map<String, CellStyleProvider> providers = Map.of(
+                "D", defaultProvider,
+                "P", new PopulationMode(dataStorage, mapColumns),
+                "N", new NationalityMode(dataStorage, mapColumns),
+                "T", new TerrainMode(dataStorage, mapColumns),
+                "R", new ResourceMode(dataStorage, mapColumns));
+        MapModeController mapModeController = new MapModeController(cachedProvider, providers);
+        providers.keySet().forEach(k -> interactiveMap.addKeyListener(k, () -> mapModeController.setMode(k)));
+
+        mapDrawer = new MapDrawer(gc, windowHeight, windowWidth, mapRows, mapColumns, cachedProvider);
         mapDrawer.redrawMap();
 
-        var countrySelector = new CountrySelector(dataStorage);
+        var itemSelector = new ItemSelector<>(Stream.of(Resource.values())
+                .collect(Collectors.toMap(n -> n.getName(), n -> n)));
 
-        AnchorPane.setRightAnchor(countrySelector.getNode(), 40.0);
+        AnchorPane.setRightAnchor(itemSelector.getNode(), 40.0);
+        AnchorPane.setTopAnchor(itemSelector.getNode(), 40.0);
         AnchorPane.setRightAnchor(pane.getNode(), 10.0);
-        AnchorPane apane = new AnchorPane(canvas, pane.getNode(), countrySelector.getNode());
+        AnchorPane apane = new AnchorPane(canvas, pane.getNode(), itemSelector.getNode());
         root.getChildren().add(apane);
         scene = new Scene(root);
 
 
-        var mapEditor = new MapEditor(mapDrawer, scene, countrySelector, dataStorage);
+        var mapEditor = new MapEditor<>(interactiveMap, itemSelector, (p, n) -> {
+            if (p == null) {
+                return;
+            }
+            dataStorage.getRegion(p.x, p.y).setResource(n);
+            System.out.println("\n\n\n///");
+            dataStorage.getRegions()
+                    .forEach(r -> System.out.println(r.getX() + "," + r.getY() + "," + r.getResource().getId()));
+        });
 
-        var thread = new TimeThread(pane, new TimelineEventLoop());
+        var eventLoop = new TimelineEventLoop();
+        var thread = new TimeThread(pane, eventLoop);
         primaryStage.setScene(scene);
-        InteractiveMap interactiveMap = new InteractiveMap(mapDrawer);
+
         MapMoveController moveController = new MapMoveController(windowWidth, windowHeight, mapDrawer, scene, interactiveMap);
         animationTimer.addAnimation(moveController);
         primaryStage.show();

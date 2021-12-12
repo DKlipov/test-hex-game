@@ -6,15 +6,6 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class Population {
-    private int count;
-
-    private int avgEducation;
-
-    private double females;
 
     private Nation nation;
-
-    private double children;
-
-
 }

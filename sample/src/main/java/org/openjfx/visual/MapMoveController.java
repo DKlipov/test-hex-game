@@ -4,6 +4,7 @@ import javafx.scene.Scene;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.ScrollEvent;
 
+import java.awt.*;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -46,8 +47,11 @@ public class MapMoveController implements AnimatedComponent {
                 lastX = event.getX();
                 lastY = event.getY();
                 mouseAwaitTime = -1;
+                interactiveMap.mouseMoved(mapDrawer.getCell(lastX, lastY), event);
             }
         });
+        scene.setOnMouseClicked(event->interactiveMap.cellClicked(mapDrawer.getCell(event.getX(), event.getY())));
+        scene.setOnMouseDragged(event -> interactiveMap.mouseMoved(mapDrawer.getCell(event.getX(), event.getY()), event));
     }
 
     @Override
@@ -76,8 +80,8 @@ public class MapMoveController implements AnimatedComponent {
             mouseAwaitTime += diffMillis;
             if (mouseAwaitTime > 1000) {
                 hoverTriggered = true;
-                var cell = mapDrawer.getCell(lastX, lastY);
-                interactiveMap.cellHovered(cell.x, cell.y);
+                Point cell = mapDrawer.getCell(lastX, lastY);
+                interactiveMap.cellDelayedHover(cell);
             }
         }
     }

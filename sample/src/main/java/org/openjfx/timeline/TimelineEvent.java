@@ -6,4 +6,6 @@ public interface TimelineEvent {
     void execute();
 
     void repeat(TimelineEventLoop loop, LocalDate localDate);
+
+    LocalDate getDate();
 }

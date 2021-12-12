@@ -1,4 +1,4 @@
-package org.openjfx.visual;
+package org.openjfx.visual.mapmodes;
 
 import javafx.scene.paint.Color;
 import org.openjfx.utils.Clocker;
@@ -43,13 +43,18 @@ public class CachedStyleProvider implements CellStyleProvider {
     }
 
     @Override
-    public Color getColor(int x, int y) {
+    public Color getFill(int x, int y) {
         return styles.get(x).get(y).getFill();
     }
 
     @Override
     public CellStyle getStyle(int x, int y) {
         return styles.get(x).get(y);
+    }
+
+    @Override
+    public Color getBorder(int x, int y) {
+        return styles.get(x).get(y).getBorder();
     }
 
     @Override
