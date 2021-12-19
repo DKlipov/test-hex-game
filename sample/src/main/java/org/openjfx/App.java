@@ -8,11 +8,9 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
 import org.openjfx.controls.ItemSelector;
+import org.openjfx.controls.NumberInput;
 import org.openjfx.controls.SpeedPane;
-import org.openjfx.map.DataStorage;
-import org.openjfx.map.Nation;
-import org.openjfx.map.Population;
-import org.openjfx.map.Terrain;
+import org.openjfx.map.*;
 import org.openjfx.map.economy.Resource;
 import org.openjfx.timeline.InitialMigration;
 import org.openjfx.timeline.TimeThread;
@@ -66,15 +64,19 @@ public class App extends Application {
                 "P", new PopulationMode(dataStorage, mapColumns),
                 "N", new NationalityMode(dataStorage, mapColumns),
                 "T", new TerrainMode(dataStorage, mapColumns),
-                "R", new ResourceMode(dataStorage, mapColumns));
+                "R", new ResourceMode(dataStorage, mapColumns),
+                "A", new AreaMode(dataStorage, mapColumns),
+                "M", new AdministrativeMode(dataStorage, mapColumns));
         MapModeController mapModeController = new MapModeController(cachedProvider, providers);
         providers.keySet().forEach(k -> interactiveMap.addKeyListener(k, () -> mapModeController.setMode(k)));
 
         mapDrawer = new MapDrawer(gc, windowHeight, windowWidth, mapRows, mapColumns, cachedProvider);
         mapDrawer.redrawMap();
 
-        var itemSelector = new ItemSelector<>(Stream.of(Resource.values())
-                .collect(Collectors.toMap(n -> n.getName(), n -> n)));
+//        var itemSelector = new ItemSelector<>(Stream.of(Resource.values())
+//                .collect(Collectors.toMap(n -> n.getName(), n -> n)));
+
+        var itemSelector = new NumberInput();
 
         AnchorPane.setRightAnchor(itemSelector.getNode(), 40.0);
         AnchorPane.setTopAnchor(itemSelector.getNode(), 40.0);
@@ -85,13 +87,22 @@ public class App extends Application {
 
 
         var mapEditor = new MapEditor<>(interactiveMap, itemSelector, (p, n) -> {
-            if (p == null) {
+            if (p == null || n == null) {
                 return;
             }
-            dataStorage.getRegion(p.x, p.y).setResource(n);
+
+            int i = dataStorage.getAreas().size();
+            while (dataStorage.getAreas().size() <= n) {
+                dataStorage.getAreas().add(new Area(i));
+                i++;
+            }
+            var re = dataStorage.getRegion(p.x, p.y);
+            int old = re.getArea().getId();
+            re.setArea(dataStorage.getAreas().get(n));
             System.out.println("\n\n\n///");
             dataStorage.getRegions()
-                    .forEach(r -> System.out.println(r.getX() + "," + r.getY() + "," + r.getResource().getId()));
+                    .forEach(r -> System.out.println(r.getX() + "," + r.getY() + "," + r.getArea().getId()));
+            System.out.println(old);
         });
 
         var eventLoop = new TimelineEventLoop();

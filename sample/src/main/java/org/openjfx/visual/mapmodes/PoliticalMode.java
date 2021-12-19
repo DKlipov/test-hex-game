@@ -4,7 +4,9 @@ import javafx.scene.paint.Color;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import org.openjfx.map.Country;
 import org.openjfx.map.DataStorage;
+import org.openjfx.utils.CellUtils;
 
 import java.awt.*;
 
@@ -39,10 +41,13 @@ public class PoliticalMode implements CellStyleProvider {
         }
         var region = dataStorage.getRegions().stream()
                 .filter(r -> r.getX() == effectiveX && r.getY() == y).findAny().orElse(null);
-        if (region != null) {
-            return region.getCountry().getColor();
+        if (region == null) {
+            return empty;
         }
-        return empty;
+        if (dataStorage.getCountryData().get(region.getCountry()).getCapital() == region) {
+            return Color.RED;
+        }
+        return region.getCountry().getColor();
     }
 
     private static final int[] xDiff = new int[]{0, 1, 1, 0, -1, -1};
@@ -51,19 +56,28 @@ public class PoliticalMode implements CellStyleProvider {
 
     @Override
     public Color getBorder(int x, int y) {
-        return getFill(x, y).deriveColor(0, 1.0, 0.7, 1.0);
+        var r= dataStorage.getRegion(x, y);
+        if (r == null) {
+            return empty;
+        }
+        return r.getCountry().getColor().deriveColor(0, 1.0, 0.7, 1.0);
     }
 
     @Override
     public Color[] getBordersColor(int x, int y) {
         Color[] result = new Color[6];
-        Color base = getFill(x, y);
+        var r = dataStorage.getRegion(x, y);
+        if (r == null) {
+            return null;
+        }
+        Country base = r.getCountry();
         Color target = getBorder(x, y);
         int[] yDiff = x % 2 == 0 ? y0Diff : y1Diff;
         boolean isArrayEmpty = true;
         for (int i = 0; i < 6; i++) {
-            Color near = getFill(x + xDiff[i], y + yDiff[i]);
-            if (!base.equals(empty) && !base.equals(near)) {
+            var m = dataStorage.getRegion(CellUtils.getInRealSpace(x + xDiff[i]), y + yDiff[i]);
+            Country near = m == null ? null : m.getCountry();
+            if (base != near) {
                 result[i] = target;
                 isArrayEmpty = false;
             } else {

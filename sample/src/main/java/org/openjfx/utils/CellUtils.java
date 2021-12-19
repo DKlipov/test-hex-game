@@ -17,7 +17,7 @@ public class CellUtils {
         int[] yDiff = cell.x % 2 == 0 ? y0Diff : y1Diff;
         List<Point> result = new ArrayList<>();
         for (int i = 0; i < 6; i++) {
-            int x=cell.x + xDiff[i];
+            int x = cell.x + xDiff[i];
             int effectiveX;
             if (x >= App.mapColumns) {
                 effectiveX = x - App.mapColumns;
@@ -30,6 +30,16 @@ public class CellUtils {
         }
 
         return result;
+    }
+
+    public int getInRealSpace(int x) {
+        if (x >= App.mapColumns) {
+            return x - App.mapColumns;
+        } else if (x < 0) {
+            return x + App.mapColumns;
+        } else {
+            return x;
+        }
     }
 
 }

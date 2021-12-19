@@ -15,4 +15,7 @@ public class RegionControl {
     private Terrain terrain;
     private Resource resource;
     private List<Population> population;
+    private Area area;
+    private Province province;
+    private boolean city;
 }

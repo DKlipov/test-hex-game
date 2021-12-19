@@ -5,14 +5,11 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.openjfx.map.DataStorage;
-import org.openjfx.map.Nation;
 
 import java.awt.*;
-import java.util.HashMap;
-import java.util.Map;
 
 @RequiredArgsConstructor
-public class TerrainMode implements CellStyleProvider {
+public class AdministrativeMode implements CellStyleProvider {
     @Getter
     @Setter
     private Point awaitedCell;
@@ -23,7 +20,7 @@ public class TerrainMode implements CellStyleProvider {
 
     private final PoliticalMode mode;
 
-    public TerrainMode(DataStorage dataStorage, int mapColumns) {
+    public AdministrativeMode(DataStorage dataStorage, int mapColumns) {
         this.dataStorage = dataStorage;
         mode = new PoliticalMode(dataStorage, mapColumns);
     }
@@ -38,12 +35,12 @@ public class TerrainMode implements CellStyleProvider {
     @Override
     public Color getFill(int x, int y) {
         var region = dataStorage.getRegion(x, y);
-        if (region == null) {
+        if (region == null || region.getProvince() == null) {
             return empty;
-        } else if (region.isCity()) {
-            return Color.RED;
+        } else if (region.getProvince().getCapital() == region) {
+            return region.getProvince().getColor().deriveColor(0, 1.0, 0.5, 1.0);
         } else {
-            return region.getTerrain().getColor();
+            return region.getProvince().getColor();
         }
     }
 

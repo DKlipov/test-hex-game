@@ -14,9 +14,6 @@ public class ItemSelector<T> implements Control {
     private final Node node;
 
     @Getter
-    private int speed = 0;
-
-    @Getter
     private T target;
 
 
