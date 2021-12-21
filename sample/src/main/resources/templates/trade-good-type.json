@@ -1,0 +1,119 @@
+{
+  "GRAIN": {
+    "groups": []
+  },
+  "COTTON": {
+    "groups": []
+  },
+  "RAW_RUBBER": {
+    "groups": []
+  },
+  "RUBBER": {
+    "groups": []
+  },
+  "OIL": {
+    "groups": []
+  },
+  "COAL": {
+    "groups": []
+  },
+  "STEEL": {
+    "groups": []
+  },
+  "FURNITURE": {
+    "groups": [
+      "CONSUMER_GOODS"
+    ]
+  },
+  "FERTILIZER": {
+    "groups": [
+      "UPGRADABLE"
+    ]
+  },
+  "CAR": {
+    "groups": [
+      "UPGRADABLE",
+      "CONSUMER_GOODS"
+    ]
+  },
+  "LUMBER": {
+    "groups": []
+  },
+  "MACHINES": {
+    "groups": [
+      "UPGRADABLE"
+    ]
+  },
+  "INSTRUMENTS": {
+    "groups": [
+      "UPGRADABLE"
+    ]
+  },
+  "CEMENT": {
+    "groups": []
+  },
+  "EXPLOSIVES": {
+    "groups": []
+  },
+  "FOOD": {
+    "groups": [
+      "CONSUMER_GOODS"
+    ]
+  },
+  "CLOTHES": {
+    "groups": [
+      "CONSUMER_GOODS"
+    ]
+  },
+  "FUEL": {
+    "groups": []
+  },
+  "ENGINE": {
+    "groups": [
+      "UPGRADABLE"
+    ]
+  },
+  "LIQUOR": {
+    "groups": [
+      "CONSUMER_GOODS"
+    ]
+  },
+  "APPLIANCES": {
+    "groups": [
+      "UPGRADABLE",
+      "CONSUMER_GOODS"
+    ]
+  },
+  "ELECTRONIC": {
+    "groups": [
+      "UPGRADABLE"
+    ]
+  },
+  "PLASTIC": {
+    "groups": [
+      "UPGRADABLE"
+    ]
+  },
+  "CHEMICALS": {
+    "groups": []
+  },
+  "MEDICINES": {
+    "groups": [
+      "UPGRADABLE"
+    ]
+  },
+  "ALLOYS": {
+    "groups": [
+      "UPGRADABLE"
+    ]
+  },
+  "NONFERRUS": {
+    "groups": []
+  },
+  "CHROMIUM": {
+    "groups": []
+  },
+  "ALUMINIUM": {
+    "groups": []
+  }
+}

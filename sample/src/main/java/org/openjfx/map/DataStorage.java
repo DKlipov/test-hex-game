@@ -4,8 +4,14 @@ import javafx.scene.paint.Color;
 import lombok.Data;
 import lombok.Getter;
 import org.openjfx.map.data.CountryData;
+import org.openjfx.map.economy.Company;
+import org.openjfx.map.economy.RegionEconomy;
 import org.openjfx.map.economy.Resource;
+import org.openjfx.map.economy.production.Factory;
+import org.openjfx.map.economy.production.ProductionLine;
+import org.openjfx.map.economy.production.template.FactoryType;
 import org.openjfx.utils.CellUtils;
+import org.openjfx.utils.ResourceLoader;
 
 import java.awt.*;
 import java.io.BufferedReader;
@@ -69,6 +75,8 @@ public class DataStorage {
 
     private final List<RegionControl> regions = new ArrayList<>();
 
+    private final List<RegionEconomy> regionsEconomy = new ArrayList<>();
+
     public RegionControl getRegion(int x, int y) {
         return regions.stream()
                 .filter(r -> r.getX() == x && r.getY() == y).findAny().orElse(null);
@@ -84,6 +92,7 @@ public class DataStorage {
                 Terrain.GRASSLANDS,
                 null,
                 new CopyOnWriteArrayList<>(), areas.get(0), null, false)));
+        regions.forEach(r -> regionsEconomy.add(new RegionEconomy(r)));
         readInput("population", line -> getRegion(Integer.parseInt(line[0]), Integer.parseInt(line[1])).setPopulation(
                 generatePopulation(Integer.parseInt(line[2]), nationMap.get(line[3]))));
         readInput("terrain", line -> getRegion(Integer.parseInt(line[0]), Integer.parseInt(line[1])).setTerrain(terrainMap.get(Integer.parseInt(line[2]))));
@@ -103,6 +112,28 @@ public class DataStorage {
         setCities();
         setCapitals();
         setProvinces();
+        setIndustry();
+        System.out.println(getRegions().stream().map(r -> r.getPopulation().size()).reduce(Integer::sum));//178362
+        System.out.println(regions.stream().filter(r -> r.getTerrain() == Terrain.GRASSLANDS).count());//1578
+    }
+
+    private void setIndustry() {
+        var cities = regionsEconomy.stream().filter(re -> re.getRegion().isCity()).collect(Collectors.toList());
+        var types = new ArrayList<>(ResourceLoader.getResources(FactoryType.class).values());
+        int i = 0;
+        for (var c : cities) {
+            Factory factory = new Factory(types.get(i), 1, new Company(), new ArrayList<>(), 0, 0);
+            var template = factory.getFactoryType().getTemplates().get(0);
+            var iq = template.getInputs().stream().mapToInt(in -> 1).toArray();
+            factory.getLines().add(new ProductionLine(template, 1.0, 1,
+                    iq, 1));
+            c.getIndustry().add(factory);
+            i++;
+            if (i >= types.size()) {
+                i = 0;
+            }
+        }
+
     }
 
     private void setProvinces() {
@@ -149,7 +180,7 @@ public class DataStorage {
                         .filter(n -> !used.contains(n))
                         .filter(n -> n.getProvince() != null)
                         .forEach(n -> neg.compute(n.getProvince(), (k, v) -> {
-                            if (v==null||v == 0) {
+                            if (v == null || v == 0) {
                                 return 1;
                             }
                             return v++;
@@ -160,7 +191,7 @@ public class DataStorage {
                 int max = -1;
                 Province cand = null;
                 for (var e : neg.entrySet()) {
-                    if (e.getKey().getCountry()==r.getCountry()&&e.getValue() > max) {
+                    if (e.getKey().getCountry() == r.getCountry() && e.getValue() > max) {
                         max = e.getValue();
                         cand = e.getKey();
                     }
@@ -169,12 +200,12 @@ public class DataStorage {
             }
         }
         countryData.values().stream()
-                .flatMap(d->d.getProvinces().stream())
-                .forEach(p->{
-                    RegionControl cand=null;
-                    for(var rc:p.getRegions()){
-                        if(cand==null||rc.getPopulation().size()>cand.getPopulation().size()){
-                            cand=rc;
+                .flatMap(d -> d.getProvinces().stream())
+                .forEach(p -> {
+                    RegionControl cand = null;
+                    for (var rc : p.getRegions()) {
+                        if (cand == null || rc.getPopulation().size() > cand.getPopulation().size()) {
+                            cand = rc;
                         }
                     }
                     p.setCapital(cand);
@@ -210,7 +241,6 @@ public class DataStorage {
 
     private void setCities() {
         areas.forEach(r -> {
-            var medium = r.getRegions().size() / r.getRegions().stream().mapToLong(reg -> reg.getPopulation().size()).sum();
             RegionControl max = null;
             for (var reg : r.getRegions()) {
                 if (max == null || max.getPopulation().size() < reg.getPopulation().size()) {

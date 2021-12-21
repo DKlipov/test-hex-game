@@ -1,0 +1,138 @@
+{
+  "OIL": {
+    "templates": [
+      {
+        "output": "FUEL",
+        "inputs": [
+          "OIL"
+        ]
+      }
+    ]
+  },
+  "PLASTIC": {
+    "templates": [
+      {
+        "output": "RUBBER",
+        "inputs": [
+          "RAW_RUBBER"
+        ]
+      },
+      {
+        "output": "RUBBER",
+        "inputs": [
+          "RAW_RUBBER",
+          "OIL"
+        ]
+      },
+      {
+        "output": "PLASTIC",
+        "inputs": [
+          "OIL"
+        ]
+      }
+    ]
+  },
+  "MACHINES": {
+    "templates": [
+      {
+        "output": "MACHINES",
+        "inputs": [
+          "ELECTRONIC",
+          "ALLOYS",
+          "PLASTIC",
+          "STEEL"
+        ]
+      },
+      {
+        "output": "ELECTRONIC",
+        "inputs": [
+          "NONFERRUS",
+          "PLASTIC",
+          "RUBBER"
+        ]
+      },
+      {
+        "output": "ENGINE",
+        "inputs": [
+          "RUBBER",
+          "ALLOYS"
+        ]
+      }
+    ]
+  },
+  "CAR": {
+    "templates": [
+      {
+        "output": "CAR",
+        "inputs": [
+          "ENGINE",
+          "STEEL",
+          "PLASTIC"
+        ]
+      }
+    ]
+  },
+  "CHEMICAL": {
+    "templates": [
+      {
+        "output": "MEDICINES",
+        "inputs": [
+          "CHEMICALS",
+          "PLASTIC"
+        ]
+      },
+      {
+        "output": "FERTILIZER",
+        "inputs": [
+          "CHEMICALS"
+        ]
+      }
+    ]
+  },
+  "CIVIL": {
+    "templates": [
+      {
+        "output": "CLOTHES",
+        "inputs": [
+          "COTTON"
+        ]
+      },
+      {
+        "output": "FURNITURE",
+        "inputs": [
+          "LUMBER",
+          "STEEL",
+          "PLASTIC"
+        ]
+      }
+    ]
+  },
+  "FOOD": {
+    "templates": [
+      {
+        "output": "FOOD",
+        "inputs": [
+          "GRAIN"
+        ]
+      },
+      {
+        "output": "LIQUOR",
+        "inputs": [
+          "GRAIN"
+        ]
+      }
+    ]
+  },
+  "STEEL": {
+    "templates": [
+      {
+        "output": "ALLOYS",
+        "inputs": [
+          "STEEL",
+          "ALUMINIUM",
+          "CHROMIUM"
+        ]
+      }
+    ]
+  }
+}

@@ -17,6 +17,7 @@ import org.openjfx.timeline.TimeThread;
 import org.openjfx.timeline.TimelineEventLoop;
 import org.openjfx.utils.CellUtils;
 import org.openjfx.utils.Clocker;
+import org.openjfx.utils.ResourceLoader;
 import org.openjfx.visual.*;
 import org.openjfx.visual.editors.MapEditor;
 import org.openjfx.visual.mapmodes.*;
@@ -43,6 +44,7 @@ public class App extends Application {
 
     @Override
     public void start(Stage primaryStage) {
+        ResourceLoader.resources.keySet();
         primaryStage.setTitle("Drawing Operations Test");
         Group root = new Group();
         Canvas canvas = new Canvas(windowWidth, windowHeight);
@@ -73,7 +75,7 @@ public class App extends Application {
         mapDrawer = new MapDrawer(gc, windowHeight, windowWidth, mapRows, mapColumns, cachedProvider);
         mapDrawer.redrawMap();
 
-//        var itemSelector = new ItemSelector<>(Stream.of(Resource.values())
+//        var itemSelector = new ItemSelector<>(Stream.of(Loadable.values())
 //                .collect(Collectors.toMap(n -> n.getName(), n -> n)));
 
         var itemSelector = new NumberInput();

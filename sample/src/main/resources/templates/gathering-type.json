@@ -1,0 +1,118 @@
+{
+  "OIL": {
+    "output": "OIL",
+    "preconditions": [
+      "MACHINES"
+    ],
+    "consumables": [],
+    "resourceRequirements": "OIL",
+    "terrainRequirements": null
+  },
+  "STEEL": {
+    "output": "STEEL",
+    "preconditions": [
+      "MACHINES",
+      "STEEL"
+    ],
+    "consumables": [
+      "COAL"
+    ],
+    "resourceRequirements": "IRON",
+    "terrainRequirements": null
+  },
+  "NONFERRUS": {
+    "output": "NONFERRUS",
+    "preconditions": [
+      "MACHINES",
+      "STEEL"
+    ],
+    "consumables": [
+      "COAL"
+    ],
+    "resourceRequirements": "NONFERRUS",
+    "terrainRequirements": null
+  },
+  "CHROMIUM": {
+    "output": "CHROMIUM",
+    "preconditions": [
+      "MACHINES",
+      "STEEL"
+    ],
+    "consumables": [
+      "COAL"
+    ],
+    "resourceRequirements": "CHROMIUM",
+    "terrainRequirements": null
+  },
+  "ALUMINIUM": {
+    "output": "ALUMINIUM",
+    "preconditions": [
+      "MACHINES",
+      "STEEL"
+    ],
+    "consumables": [
+      "COAL"
+    ],
+    "resourceRequirements": "ALUMINIUM",
+    "terrainRequirements": null
+  },
+  "COAL": {
+    "output": "COAL",
+    "preconditions": [
+      "MACHINES",
+      "CAR"
+    ],
+    "consumables": [],
+    "resourceRequirements": "COAL",
+    "terrainRequirements": null
+  },
+  "RUBBER": {
+    "output": "RAW_RUBBER",
+    "preconditions": [],
+    "consumables": [],
+    "resourceRequirements": "RUBBER",
+    "terrainRequirements": null
+  },
+  "CHEMICALS": {
+    "output": "CHEMICALS",
+    "preconditions": [
+      "MACHINES",
+      "CAR"
+    ],
+    "consumables": [],
+    "resourceRequirements": "CHEMICALS",
+    "terrainRequirements": null
+  },
+  "GRAIN": {
+    "output": "GRAIN",
+    "preconditions": [
+      "CAR"
+    ],
+    "consumables": [
+      "FERTILIZER"
+    ],
+    "resourceRequirements": null,
+    "terrainRequirements": "GRASSLANDS"
+  },
+  "LUMBER": {
+    "output": "LUMBER",
+    "preconditions": [
+      "MACHINES",
+      "CAR"
+    ],
+    "consumables": [],
+    "resourceRequirements": null,
+    "terrainRequirements": "FOREST"
+  },
+  "COTTON": {
+    "output": "COTTON",
+    "preconditions": [
+      "CAR"
+    ],
+    "consumables": [
+      "FERTILIZER"
+    ],
+    "resourceRequirements": null,
+    "terrainRequirements": "GRASSLANDS"
+  }
+}

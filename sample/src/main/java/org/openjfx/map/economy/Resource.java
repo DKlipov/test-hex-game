@@ -10,7 +10,9 @@ public enum Resource {
     OIL(3, Color.BLACK),
     CHEMICALS(4, Color.LIME),
     RUBBER(5, Color.PINK),
-    COAL(6, Color.RED);
+    COAL(6, Color.RED),
+    CHROMIUM(7, Color.YELLOW),
+    ALUMINIUM(8, Color.YELLOW);
     private int id;
     private String name;
     private Color color;
