@@ -12,9 +12,7 @@ import org.openjfx.controls.NumberInput;
 import org.openjfx.controls.SpeedPane;
 import org.openjfx.map.*;
 import org.openjfx.map.economy.Resource;
-import org.openjfx.timeline.InitialMigration;
-import org.openjfx.timeline.TimeThread;
-import org.openjfx.timeline.TimelineEventLoop;
+import org.openjfx.timeline.*;
 import org.openjfx.utils.CellUtils;
 import org.openjfx.utils.Clocker;
 import org.openjfx.utils.ResourceLoader;
@@ -87,27 +85,9 @@ public class App extends Application {
         root.getChildren().add(apane);
         scene = new Scene(root);
 
-
-        var mapEditor = new MapEditor<>(interactiveMap, itemSelector, (p, n) -> {
-            if (p == null || n == null) {
-                return;
-            }
-
-            int i = dataStorage.getAreas().size();
-            while (dataStorage.getAreas().size() <= n) {
-                dataStorage.getAreas().add(new Area(i));
-                i++;
-            }
-            var re = dataStorage.getRegion(p.x, p.y);
-            int old = re.getArea().getId();
-            re.setArea(dataStorage.getAreas().get(n));
-            System.out.println("\n\n\n///");
-            dataStorage.getRegions()
-                    .forEach(r -> System.out.println(r.getX() + "," + r.getY() + "," + r.getArea().getId()));
-            System.out.println(old);
-        });
-
         var eventLoop = new TimelineEventLoop();
+        eventLoop.putEvent(new BigProductionCycle(dataStorage));
+        eventLoop.putEvent(new SmallProductionCycle(dataStorage));
         var thread = new TimeThread(pane, eventLoop);
         primaryStage.setScene(scene);
 

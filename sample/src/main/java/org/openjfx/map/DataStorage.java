@@ -3,13 +3,19 @@ package org.openjfx.map;
 import javafx.scene.paint.Color;
 import lombok.Data;
 import lombok.Getter;
+import lombok.Setter;
 import org.openjfx.map.data.CountryData;
 import org.openjfx.map.economy.Company;
+import org.openjfx.map.economy.production.ResourceGathering;
+import org.openjfx.map.economy.production.template.ResourceGatheringType;
+import org.openjfx.map.economy.production.template.TradeGoodType;
+import org.openjfx.map.economy.trade.Exchange;
 import org.openjfx.map.economy.RegionEconomy;
 import org.openjfx.map.economy.Resource;
 import org.openjfx.map.economy.production.Factory;
 import org.openjfx.map.economy.production.ProductionLine;
 import org.openjfx.map.economy.production.template.FactoryType;
+import org.openjfx.map.economy.trade.Storage;
 import org.openjfx.utils.CellUtils;
 import org.openjfx.utils.ResourceLoader;
 
@@ -26,7 +32,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-@Data
+@Getter
+@Setter
 public class DataStorage {
 
     @Getter
@@ -73,6 +80,8 @@ public class DataStorage {
             new Nation("CRO", "Croatian", Color.AQUAMARINE)
     );
 
+    private final Map<Object, Exchange> exchanges = new HashMap<>();
+
     private final List<RegionControl> regions = new ArrayList<>();
 
     private final List<RegionEconomy> regionsEconomy = new ArrayList<>();
@@ -113,8 +122,21 @@ public class DataStorage {
         setCapitals();
         setProvinces();
         setIndustry();
+        setTrade();
         System.out.println(getRegions().stream().map(r -> r.getPopulation().size()).reduce(Integer::sum));//178362
         System.out.println(regions.stream().filter(r -> r.getTerrain() == Terrain.GRASSLANDS).count());//1578
+    }
+
+    private void setTrade() {
+        var global = new Exchange(null, null);
+        exchanges.put(this, global);
+        countryData.values().forEach(c -> {
+            var national = new Exchange(c.getCapital(), global);
+            exchanges.put(c, national);
+            c.getProvinces().forEach(p -> {
+                exchanges.put(p, new Exchange(p.getCapital(), national));
+            });
+        });
     }
 
     private void setIndustry() {
@@ -122,17 +144,28 @@ public class DataStorage {
         var types = new ArrayList<>(ResourceLoader.getResources(FactoryType.class).values());
         int i = 0;
         for (var c : cities) {
-            Factory factory = new Factory(types.get(i), 1, new Company(), new ArrayList<>(), 0, 0);
+            Factory factory = new Factory(types.get(i), 1, new Company(), new ArrayList<>(), 1000, 100);
             var template = factory.getFactoryType().getTemplates().get(0);
             var iq = template.getInputs().stream().mapToInt(in -> 1).toArray();
+            var iqq = template.getInputs().stream().mapToInt(in -> 1).toArray();
+            var ip = template.getInputs().stream().mapToInt(in -> 1).toArray();
             factory.getLines().add(new ProductionLine(template, 1.0, 1,
-                    iq, 1));
+                    iq, iqq, ip, 1, 1, 1.0));
             c.getIndustry().add(factory);
             i++;
             if (i >= types.size()) {
                 i = 0;
             }
         }
+        Map<Resource, ResourceGatheringType> gatheringMap = ResourceLoader.getResources(ResourceGatheringType.class)
+                .values().stream()
+                .filter((ResourceGatheringType v) -> v.getResourceRequirements() != null)
+                .collect(Collectors.toMap(ResourceGatheringType::getResourceRequirements, v -> v));
+        regionsEconomy.stream().filter(re -> re.getRegion().getResource() != null).forEach(re -> {
+            var gathering = new ResourceGathering(gatheringMap.get(re.getRegion().getResource()), 1,
+                    1.0, new Company(), 1000, 100, 0);
+            re.getGatherings().add(gathering);
+        });
 
     }
 

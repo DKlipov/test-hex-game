@@ -2,9 +2,11 @@ package org.openjfx.map.economy.production;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import org.openjfx.map.Population;
 import org.openjfx.map.economy.Company;
 import org.openjfx.map.economy.production.template.FactoryType;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -20,5 +22,6 @@ public class Factory {
 
     private int income;
 
-    private int employee;
+    private final List<Population> employee = new ArrayList<>();
+    private int payment;
 }

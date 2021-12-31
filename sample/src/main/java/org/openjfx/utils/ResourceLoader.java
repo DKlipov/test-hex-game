@@ -42,7 +42,8 @@ public class ResourceLoader {
                 Iterator<String> it = node.fieldNames();
                 while (it.hasNext()) {
                     var key = it.next();
-                    JsonNode t = node.get(key);
+                    ObjectNode t = (ObjectNode) node.get(key);
+                    t.put("id", key);
                     stage.put(key, mapper.readValue(t.toString(), e.getKey()));
                 }
                 result.put(e.getKey(), stage);
