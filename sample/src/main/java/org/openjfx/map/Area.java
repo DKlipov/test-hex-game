@@ -1,15 +1,13 @@
 package org.openjfx.map;
 
 import javafx.scene.paint.Color;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
+import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@Data
+@Getter
+@Setter
 @ToString(exclude = "regions")
 @EqualsAndHashCode(exclude = "regions")
 @AllArgsConstructor

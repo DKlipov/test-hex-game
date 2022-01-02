@@ -35,6 +35,13 @@
   "MACHINES": {
     "templates": [
       {
+        "output": "ENGINE",
+        "inputs": [
+          "RUBBER",
+          "ALLOYS"
+        ]
+      },
+      {
         "output": "MACHINES",
         "inputs": [
           "ELECTRONIC",
@@ -49,13 +56,6 @@
           "NONFERRUS",
           "PLASTIC",
           "RUBBER"
-        ]
-      },
-      {
-        "output": "ENGINE",
-        "inputs": [
-          "RUBBER",
-          "ALLOYS"
         ]
       }
     ]
@@ -75,14 +75,14 @@
   "CHEMICAL": {
     "templates": [
       {
-        "output": "MEDICINES",
-        "inputs": [
-        ]
-      },
-      {
         "output": "FERTILIZER",
         "inputs": [
           "CHEMICALS"
+        ]
+      },
+      {
+        "output": "MEDICINES",
+        "inputs": [
         ]
       }
     ]
@@ -99,20 +99,13 @@
         "output": "FURNITURE",
         "inputs": [
           "LUMBER",
-          "STEEL",
           "PLASTIC"
         ]
       }
     ]
   },
-  "FOOD": {
+  "LIQUOR": {
     "templates": [
-      {
-        "output": "FOOD",
-        "inputs": [
-          "GRAIN"
-        ]
-      },
       {
         "output": "LIQUOR",
         "inputs": [

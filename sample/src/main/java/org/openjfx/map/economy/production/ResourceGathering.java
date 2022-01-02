@@ -1,18 +1,19 @@
 package org.openjfx.map.economy.production;
 
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import org.openjfx.map.Population;
 import org.openjfx.map.economy.Company;
 import org.openjfx.map.economy.Contract;
-import org.openjfx.map.economy.production.template.FactoryType;
 import org.openjfx.map.economy.production.template.ResourceGatheringType;
 import org.openjfx.map.economy.trade.Storage;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@Data
+@Getter
+@Setter
 @AllArgsConstructor
 public class ResourceGathering {
     private final ResourceGatheringType type;
@@ -35,6 +36,6 @@ public class ResourceGathering {
     private final List<Contract> contracts = new ArrayList<>();
 
     public int getMaxProduction() {
-        return (int) (getSize() * getEffective() * 100);
+        return (int) (getSize() * getEffective() * type.getBaseEffectively());
     }
 }

@@ -2,9 +2,12 @@ package org.openjfx.map.economy;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import org.openjfx.map.economy.production.template.TradeGoodType;
 
-@Data
+@Getter
+@Setter
 @AllArgsConstructor
 public class Contract {
     private ContractSide source;

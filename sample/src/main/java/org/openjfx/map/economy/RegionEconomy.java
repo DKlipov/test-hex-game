@@ -1,12 +1,9 @@
 package org.openjfx.map.economy;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
+import lombok.*;
 import org.openjfx.map.RegionControl;
 import org.openjfx.map.economy.production.Factory;
-import org.openjfx.map.economy.production.NativeEmployee;
+import org.openjfx.map.economy.production.NaturalEconomy;
 import org.openjfx.map.economy.production.ResourceGathering;
 import org.openjfx.map.economy.production.template.TradeGoodType;
 import org.openjfx.utils.ResourceLoader;
@@ -14,7 +11,8 @@ import org.openjfx.utils.ResourceLoader;
 import java.util.ArrayList;
 import java.util.List;
 
-@Data
+@Getter
+@Setter
 @AllArgsConstructor
 @EqualsAndHashCode(exclude = "region")
 @ToString(exclude = "region")
@@ -24,7 +22,7 @@ public class RegionEconomy {
     private final List<Factory> industry = new ArrayList<>();
     private final List<ResourceGathering> gatherings = new ArrayList<>();
     private final List<Contract> contracts = new ArrayList<>();
-    private final NativeEmployee nativeEmployee=new NativeEmployee(
+    private final NaturalEconomy naturalEconomy =new NaturalEconomy(
             ResourceLoader.getResources(TradeGoodType.class).get("GRAIN")
     );
 }

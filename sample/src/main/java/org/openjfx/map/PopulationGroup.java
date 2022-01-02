@@ -16,7 +16,7 @@ public class PopulationGroup {
     private final List<Population> population = new ArrayList<>();
     private int baseIncome;
     private int expenses;
-    private int[] consuming;
+    private double[] consuming;
     private int[] price;
     private final Storage storage = new Storage();
     private final List<Contract> contracts = new ArrayList<>();

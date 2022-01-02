@@ -88,6 +88,7 @@ public class App extends Application {
         var eventLoop = new TimelineEventLoop();
         eventLoop.putEvent(new BigProductionCycle(dataStorage));
         eventLoop.putEvent(new SmallProductionCycle(dataStorage));
+        //eventLoop.putEvent(new PlanningProductionCycle(dataStorage));
         var thread = new TimeThread(pane, eventLoop);
         primaryStage.setScene(scene);
 

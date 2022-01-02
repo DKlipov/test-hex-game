@@ -9,16 +9,19 @@ import org.openjfx.map.economy.production.template.TradeGoodType;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
-public class SmallProductionCycle implements TimelineEvent {
+public class PlanningProductionCycle implements TimelineEvent {
 
     private final DataStorage dataStorage;
     @Getter
     private LocalDate date;
 
-    public SmallProductionCycle(DataStorage dataStorage) {
+    public PlanningProductionCycle(DataStorage dataStorage) {
         this.dataStorage = dataStorage;
         date = LocalDate.parse("0000-01-01");
     }
@@ -163,7 +166,7 @@ public class SmallProductionCycle implements TimelineEvent {
 
     @Override
     public void repeat(TimelineEventLoop loop, LocalDate localDate) {
-        this.date = localDate.plus(7, ChronoUnit.DAYS);
+        this.date = localDate.plus(70, ChronoUnit.DAYS);
         loop.putEvent(this);
     }
 }

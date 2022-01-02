@@ -1,0 +1,14 @@
+{
+  "CLOTHES": {
+    "output": "CLOTHES",
+    "input": "COTTON"
+  },
+  "FURNITURE": {
+    "output": "FURNITURE",
+    "input": "LUMBER"
+  },
+  "LIQUOR": {
+    "output": "LIQUOR",
+    "input": "GRAIN"
+  }
+}

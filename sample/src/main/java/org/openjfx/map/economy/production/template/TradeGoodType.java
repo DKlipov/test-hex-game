@@ -11,5 +11,7 @@ import java.util.List;
 @ToString(of = "id")
 public class TradeGoodType {
     private String id;
+    private int priority;
+    private double value;
     private List<TradeGoodGroup> groups;
 }

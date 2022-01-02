@@ -2,6 +2,8 @@ package org.openjfx.map.economy.production;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import org.openjfx.map.economy.Contract;
 import org.openjfx.map.economy.production.template.BaseProductionTemplate;
 import org.openjfx.map.economy.trade.Storage;
@@ -9,7 +11,8 @@ import org.openjfx.map.economy.trade.Storage;
 import java.util.ArrayList;
 import java.util.List;
 
-@Data
+@Getter
+@Setter
 @AllArgsConstructor
 public class ProductionLine {
     private BaseProductionTemplate template;

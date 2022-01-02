@@ -16,4 +16,9 @@ public class Population {
     public Population(Nation nation) {
         this.nation = nation;
     }
+
+    public void setPayment(int payment) {
+        budget += payment;
+        this.payment = payment;
+    }
 }

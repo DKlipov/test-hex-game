@@ -1,6 +1,8 @@
 package org.openjfx.map.economy;
 
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import org.openjfx.map.Country;
 import org.openjfx.map.economy.production.Factory;
 import org.openjfx.map.economy.production.ResourceGathering;
@@ -8,7 +10,8 @@ import org.openjfx.map.economy.production.ResourceGathering;
 import java.util.ArrayList;
 import java.util.List;
 
-@Data
+@Getter
+@Setter
 public class Company {
     private int budget;
     private Country origin;

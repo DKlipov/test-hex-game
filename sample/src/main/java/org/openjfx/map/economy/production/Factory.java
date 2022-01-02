@@ -2,6 +2,8 @@ package org.openjfx.map.economy.production;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import org.openjfx.map.Population;
 import org.openjfx.map.economy.Company;
 import org.openjfx.map.economy.production.template.FactoryType;
@@ -9,7 +11,8 @@ import org.openjfx.map.economy.production.template.FactoryType;
 import java.util.ArrayList;
 import java.util.List;
 
-@Data
+@Getter
+@Setter
 @AllArgsConstructor
 public class Factory {
     private final FactoryType factoryType;

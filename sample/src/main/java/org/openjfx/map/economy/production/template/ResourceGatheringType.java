@@ -1,6 +1,5 @@
 package org.openjfx.map.economy.production.template;
 
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -19,4 +18,5 @@ public class ResourceGatheringType {
     private List<TradeGoodType> consumables;
     private Resource resourceRequirements;
     private Terrain terrainRequirements;
+    private int baseEffectively = 100;
 }

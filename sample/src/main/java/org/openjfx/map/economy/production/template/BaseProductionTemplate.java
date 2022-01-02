@@ -1,6 +1,5 @@
 package org.openjfx.map.economy.production.template;
 
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;

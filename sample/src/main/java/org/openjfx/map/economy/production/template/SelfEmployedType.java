@@ -9,7 +9,8 @@ import java.util.List;
 @Getter
 @Setter
 @ToString(of = "id")
-public class FactoryType {
+public class SelfEmployedType {
     private String id;
-    private List<BaseProductionTemplate> templates;
+    private TradeGoodType output;
+    private TradeGoodType input;
 }

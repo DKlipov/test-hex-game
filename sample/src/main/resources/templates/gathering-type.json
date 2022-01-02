@@ -91,6 +91,7 @@
     "consumables": [
       "FERTILIZER"
     ],
+    "baseEffectively": 100,
     "resourceRequirements": null,
     "terrainRequirements": "GRASSLANDS"
   },
@@ -100,6 +101,7 @@
       "MACHINES",
       "CAR"
     ],
+    "baseEffectively": 24,
     "consumables": [],
     "resourceRequirements": null,
     "terrainRequirements": "FOREST"
@@ -112,6 +114,7 @@
     "consumables": [
       "FERTILIZER"
     ],
+    "baseEffectively": 24,
     "resourceRequirements": null,
     "terrainRequirements": "GRASSLANDS"
   }

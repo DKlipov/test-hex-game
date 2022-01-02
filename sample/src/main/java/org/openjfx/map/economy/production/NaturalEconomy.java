@@ -16,7 +16,7 @@ import java.util.Set;
 @Getter
 @Setter
 @RequiredArgsConstructor
-public class NativeEmployee {
+public class NaturalEconomy {
     private final TradeGoodType tradeGoodType;
     private int size;
     private final Set<Population> population = new HashSet<>();
@@ -24,4 +24,10 @@ public class NativeEmployee {
     private final Storage storage = new Storage();
     private final List<Contract> contracts = new ArrayList<>();
     private int income;
+    private int payment;
+    private final int effectivency = 14;
+
+    public int getProduction() {
+        return Math.min(getSize(), getPopulation().size()) * effectivency;
+    }
 }

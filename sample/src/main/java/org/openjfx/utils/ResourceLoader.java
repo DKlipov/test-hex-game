@@ -1,6 +1,5 @@
 package org.openjfx.utils;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -8,6 +7,7 @@ import lombok.experimental.UtilityClass;
 import org.apache.commons.io.IOUtils;
 import org.openjfx.map.economy.production.template.FactoryType;
 import org.openjfx.map.economy.production.template.ResourceGatheringType;
+import org.openjfx.map.economy.production.template.SelfEmployedType;
 import org.openjfx.map.economy.production.template.TradeGoodType;
 
 import java.util.HashMap;
@@ -17,10 +17,11 @@ import java.util.Map;
 
 @UtilityClass
 public class ResourceLoader {
-    private final static Map<Class<?>, String> aviable = new LinkedHashMap<>() {{
+    private final static Map<Class<?>, String> available = new LinkedHashMap<>() {{
         put(TradeGoodType.class, "trade-good-type.json");
         put(FactoryType.class, "factory-type.json");
         put(ResourceGatheringType.class, "gathering-type.json");
+        put(SelfEmployedType.class, "self-employed-type.json");
     }};
 
     public final static Map<Class<?>, Map<String, ?>> resources = initResources();
@@ -33,7 +34,7 @@ public class ResourceLoader {
         ObjectMapper mapper = new ObjectMapper();
         SimpleModule module = new SimpleModule();
         var result = new HashMap<Class<?>, Map<String, ?>>();
-        for (var e : aviable.entrySet()) {
+        for (var e : available.entrySet()) {
             try {
                 Map<String, Object> stage = new HashMap<>();
                 String text = IOUtils.toString(ResourceLoader.class.getClassLoader()

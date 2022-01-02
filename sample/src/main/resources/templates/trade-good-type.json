@@ -1,6 +1,47 @@
 {
   "GRAIN": {
-    "groups": []
+    "groups": [
+      "CONSUMER_GOODS"
+    ],
+    "priority": 1,
+    "value": 1
+  },
+  "LIQUOR": {
+    "groups": [
+      "CONSUMER_GOODS"
+    ],
+    "priority": 4,
+    "value": 0.1
+  },
+  "APPLIANCES": {
+    "groups": [
+      "UPGRADABLE",
+      "CONSUMER_GOODS"
+    ],
+    "priority": 8,
+    "value": 0.05
+  },
+  "CAR": {
+    "groups": [
+      "UPGRADABLE",
+      "CONSUMER_GOODS"
+    ],
+    "priority": 10,
+    "value": 0.01
+  },
+  "FURNITURE": {
+    "groups": [
+      "CONSUMER_GOODS"
+    ],
+    "priority": 6,
+    "value": 0.05
+  },
+  "CLOTHES": {
+    "groups": [
+      "CONSUMER_GOODS"
+    ],
+    "priority": 2,
+    "value": 0.1
   },
   "COTTON": {
     "groups": []
@@ -20,20 +61,9 @@
   "STEEL": {
     "groups": []
   },
-  "FURNITURE": {
-    "groups": [
-      "CONSUMER_GOODS"
-    ]
-  },
   "FERTILIZER": {
     "groups": [
       "UPGRADABLE"
-    ]
-  },
-  "CAR": {
-    "groups": [
-      "UPGRADABLE",
-      "CONSUMER_GOODS"
     ]
   },
   "LUMBER": {
@@ -55,33 +85,16 @@
   "EXPLOSIVES": {
     "groups": []
   },
-  "FOOD": {
-    "groups": [
-      "CONSUMER_GOODS"
-    ]
-  },
-  "CLOTHES": {
-    "groups": [
-      "CONSUMER_GOODS"
-    ]
-  },
   "FUEL": {
-    "groups": []
+    "groups": [
+      "CONSUMER_GOODS"
+    ],
+    "priority": 9,
+    "value": 0.01
   },
   "ENGINE": {
     "groups": [
       "UPGRADABLE"
-    ]
-  },
-  "LIQUOR": {
-    "groups": [
-      "CONSUMER_GOODS"
-    ]
-  },
-  "APPLIANCES": {
-    "groups": [
-      "UPGRADABLE",
-      "CONSUMER_GOODS"
     ]
   },
   "ELECTRONIC": {
