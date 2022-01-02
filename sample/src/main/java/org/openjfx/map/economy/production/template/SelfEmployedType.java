@@ -13,4 +13,6 @@ public class SelfEmployedType {
     private String id;
     private TradeGoodType output;
     private TradeGoodType input;
+
+    private final int effectivency = 10;
 }

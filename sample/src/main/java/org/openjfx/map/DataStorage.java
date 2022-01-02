@@ -153,7 +153,7 @@ public class DataStorage {
                 factory.getLines().add(new ProductionLine(template, 1.0, 1,
                         iq, iqq, ip, 1, 2, 1.0));
             });
-            c.getIndustry().add(factory);
+            //c.getIndustry().add(factory);
             i++;
             if (i >= types.size()) {
                 i = 0;
@@ -176,13 +176,13 @@ public class DataStorage {
             if (re.getRegion().getResource() != null) {
                 var gathering = new ResourceGathering(gatheringMap.get(re.getRegion().getResource()), 1,
                         1.0, new Company(), 1000, 100, 2);
-                re.getGatherings().add(gathering);
+                //re.getGatherings().add(gathering);
             } else if (terrains.contains(re.getRegion().getTerrain())) {
                 if (counter > 10) {
                     counter = 0;
                     var gathering = new ResourceGathering(farmsMap.get(order), 1,
                             1.0, new Company(), 1000, 100, 2);
-                    re.getGatherings().add(gathering);
+                    //re.getGatherings().add(gathering);
                     order++;
                     if (order >= farmsMap.size()) {
                         order = 0;

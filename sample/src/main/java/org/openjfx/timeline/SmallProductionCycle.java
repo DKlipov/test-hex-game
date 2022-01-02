@@ -5,6 +5,7 @@ import org.openjfx.map.DataStorage;
 import org.openjfx.map.economy.Contract;
 import org.openjfx.map.economy.production.NaturalEconomy;
 import org.openjfx.map.economy.production.SelfEmployed;
+import org.openjfx.map.economy.production.template.SelfEmployedType;
 import org.openjfx.map.economy.production.template.TradeGoodType;
 
 import java.time.LocalDate;
@@ -18,6 +19,8 @@ public class SmallProductionCycle implements TimelineEvent {
     @Getter
     private LocalDate date;
 
+    private Map<SelfEmployedType, Integer> selfEmployeePredicted = new HashMap<>();
+
     public SmallProductionCycle(DataStorage dataStorage) {
         this.dataStorage = dataStorage;
         date = LocalDate.parse("0000-01-01");
@@ -25,6 +28,7 @@ public class SmallProductionCycle implements TimelineEvent {
 
     @Override
     public void execute() {
+        selfEmployeePredicted.clear();
         dataStorage.getRegionsEconomy()
                 .forEach(re -> {
                     re.getGatherings().forEach(g -> {
@@ -88,15 +92,21 @@ public class SmallProductionCycle implements TimelineEvent {
 
     private final Map<TradeGoodType, Integer> sent = new HashMap<>();
 
+    private int predictSelfEmployee(SelfEmployedType type, Integer v) {
+        if (v != null) {
+            return v;
+        }
+        var ge = dataStorage.getExchanges().get(dataStorage);
+        int inputPrice = ge.getPrice(type.getInput(), 1);
+        int outputPrice = ge.getPrice(type.getOutput(), 1);
+        return (outputPrice / inputPrice) * type.getEffectivency();
+    }
+
     private void computeSelfEmployee(SelfEmployed se) {
         int delivered = se.getInputStorage().getSet().getOrDefault(se.getType().getInput(), 0);
         if (se.getProduction() <= 0) {
-            var ge = dataStorage.getExchanges().get(dataStorage);
-            if (ge.getPrices().get(se.getType().getInput()) <= 0) {
-                se.setPayment(0);
-            }
-            se.setPayment(ge.getPrices().get(se.getType().getInput()) /
-                    (ge.getPrices().get(se.getType().getOutput()) * 13 / 10));
+
+            se.setPayment(selfEmployeePredicted.compute(se.getType(), this::predictSelfEmployee));
             return;
         }
         int output = Math.min(delivered, se.getProduction());
@@ -117,7 +127,7 @@ public class SmallProductionCycle implements TimelineEvent {
     private void computeNative(NaturalEconomy naturalEconomy) {
         int output = naturalEconomy.getProduction();
         if (output <= 0) {
-            naturalEconomy.setPayment(dataStorage.getExchanges().get(dataStorage).getPrices().get(naturalEconomy.getTradeGoodType()) * naturalEconomy.getEffectivency());
+            naturalEconomy.setPayment(dataStorage.getExchanges().get(dataStorage).getPrice(naturalEconomy.getTradeGoodType(), 1) * naturalEconomy.getEffectivency());
             return;
         }
         naturalEconomy.getStorage().getSet().compute(naturalEconomy.getTradeGoodType(), (k, v) -> {

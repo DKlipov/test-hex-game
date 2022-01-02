@@ -2,16 +2,16 @@ package org.openjfx.timeline;
 
 import lombok.Getter;
 import org.openjfx.map.DataStorage;
-import org.openjfx.map.economy.Contract;
-import org.openjfx.map.economy.production.NaturalEconomy;
-import org.openjfx.map.economy.production.SelfEmployed;
-import org.openjfx.map.economy.production.template.TradeGoodType;
+import org.openjfx.map.Population;
+import org.openjfx.map.economy.production.Factory;
+import org.openjfx.map.economy.production.ResourceGathering;
+import org.openjfx.map.economy.trade.Exchange;
+import org.openjfx.map.economy.trade.LaborExchange;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.Collection;
 import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
@@ -21,6 +21,8 @@ public class PlanningProductionCycle implements TimelineEvent {
     @Getter
     private LocalDate date;
 
+    private final int PLANNING_PERIODS = 2;
+
     public PlanningProductionCycle(DataStorage dataStorage) {
         this.dataStorage = dataStorage;
         date = LocalDate.parse("0000-01-01");
@@ -28,145 +30,160 @@ public class PlanningProductionCycle implements TimelineEvent {
 
     @Override
     public void execute() {
-        dataStorage.getRegionsEconomy()
-                .forEach(re -> {
-                    re.getGatherings().forEach(g -> {
-                        int output = Math.min(g.getEmployee().size() / g.getSize(), 1) * g.getMaxProduction();
-                        g.getStorage().getSet().compute(g.getType().getOutput(), (k, v) -> {
-                            if (v == null) {
-                                return output;
-                            } else {
-                                return v + output;
-                            }
-                        });
-                        g.getEmployee().forEach(e -> {
-                            e.setPayment(g.getPayment());
-                        });
-                        g.setIncome(g.getIncome() - (g.getEmployee().size() * g.getPayment()));
-                        g.getContracts().forEach(this::computeContract);
-                    });
-                    computeNative(re.getNaturalEconomy());
-                    re.getIndustry().forEach(i -> {
-                        double k = i.getEmployee().size() / i.getSize();
-                        i.getLines().forEach(g -> {
-                            double localK = k;
-                            for (int inp = 0; inp < g.getTemplate().getInputs().size(); inp++) {
-                                if (g.getInputsQuantity()[inp] <= 0) {
-                                    continue;
-                                }
-                                var tg = g.getTemplate().getInputs().get(inp);
-                                double ik = g.getInputStorage().getSet().getOrDefault(tg, 0) / g.getInputsQuantity()[inp];
-                                localK = Math.min(localK, ik);
-                            }
-                            int output = (int) (localK * g.getMaxProduction());
-                            g.getOutputStorage().getSet().compute(g.getTemplate().getOutput(), (key, v) -> {
-                                if (v == null) {
-                                    return output;
-                                } else {
-                                    return v + output;
-                                }
-                            });
-                            g.getOutputContracts().forEach(this::computeContract);
-                        });
-
-                        i.getEmployee().forEach(e -> {
-                            e.setPayment(i.getPayment());
-                        });
-                        i.setIncome(i.getIncome() - (i.getEmployee().size() * i.getPayment()));
-                    });
-                });
-        dataStorage.getCountryData().values().stream().flatMap(c -> c.getProvinces().stream())
-                .flatMap(p -> p.getSelfEmployed().stream()).forEach(this::computeSelfEmployee);
-        outResults();
+        dataStorage.getRegionsEconomy().forEach(re -> {
+            var lExchange = dataStorage.getLaborExchanges().get(re.getRegion());
+            var globalExchange = dataStorage.getExchanges().get(dataStorage);
+            re.getGatherings().forEach(g -> computeGathering(g, lExchange, globalExchange));
+            re.getIndustry().forEach(i -> computeIndastry(i, lExchange, globalExchange));
+            re.getGatherings().removeIf(g -> g.getSize() <= 0);
+            re.getIndustry().removeIf(g -> g.getSize() <= 0);
+        });
     }
 
-    private void outResults() {
-        TreeSet<String> set = new TreeSet<>(Comparator.naturalOrder());
-        set.addAll(sent.entrySet().stream()
-                .map(e -> e.getKey().getId() + ": " + e.getValue()).collect(Collectors.toSet()));
-        System.out.println("At this week produced and delivered: ");
-        set.forEach(s -> System.out.println('\t' + s));
-        sent.clear();
-    }
-
-    private final Map<TradeGoodType, Integer> sent = new HashMap<>();
-
-    private void computeSelfEmployee(SelfEmployed se) {
-        int delivered = se.getInputStorage().getSet().getOrDefault(se.getType().getInput(), 0);
-        if (se.getProduction() <= 0) {
-            var ge = dataStorage.getExchanges().get(dataStorage);
-            if (ge.getPrices().get(se.getType().getInput()) <= 0) {
-                se.setPayment(0);
-            }
-            se.setPayment(ge.getPrices().get(se.getType().getInput()) /
-                    (ge.getPrices().get(se.getType().getOutput()) * 13 / 10));
-            return;
-        }
-        int output = Math.min(delivered, se.getProduction());
-        se.getOutputStorage().getSet().compute(se.getType().getOutput(), (k, v) -> {
-            if (v == null) {
-                return output;
+    private int computePayment(int basePayment, LaborExchange lExchange, int size, Collection<Population> employee) {
+        if (size > employee.size()) {
+            int payment = lExchange.getMinimalWage() * 11 / 10;
+            if (basePayment > payment) {
+                return (basePayment * 11 / 10);
             } else {
-                return v + output;
+                return payment;
             }
-        });
-        int payment = se.getIncome() / se.getPopulation().size();
-        se.setPayment(payment);
-        se.getPopulation().forEach(e -> e.setPayment(se.getPayment()));
-        se.setIncome(0);
-        se.getOutputContracts().forEach(this::computeContract);
+        }
+        return basePayment;
     }
 
-    private void computeNative(NaturalEconomy naturalEconomy) {
-        int output = naturalEconomy.getProduction();
-        if (output <= 0) {
-            naturalEconomy.setPayment(dataStorage.getExchanges().get(dataStorage).getPrices().get(naturalEconomy.getTradeGoodType()) * naturalEconomy.getEffectivency());
-            return;
-        }
-        naturalEconomy.getStorage().getSet().compute(naturalEconomy.getTradeGoodType(), (k, v) -> {
-            if (v == null) {
-                return output;
+    private int computePrice(double sold, int exchangePrice, int basePrice) {
+        if (sold > 0.9) {
+            if (exchangePrice > basePrice) {
+                return (exchangePrice * 11 / 10);
             } else {
-                return v + output;
+                return (basePrice * 11 / 10);
             }
-        });
-        int payment = naturalEconomy.getIncome() / naturalEconomy.getPopulation().size();
-        naturalEconomy.setPayment(payment);
-        naturalEconomy.getPopulation().forEach(e -> e.setPayment(naturalEconomy.getPayment()));
-        naturalEconomy.setIncome(0);
-        naturalEconomy.getContracts().forEach(this::computeContract);
+        } else if (sold < 0.8) {
+            if (exchangePrice > basePrice) {
+                return (basePrice * 8 / 10);
+            } else {
+                return (exchangePrice * 9 / 10);
+            }
+        }
+        return basePrice;
     }
 
-    private void computeContract(Contract contract) {
-        var available = contract.getSource().getStorage().getSet().getOrDefault(contract.getType(), 0);
-        if (available <= 0) {
-            return;
-        }
-        var leaved = available - contract.getCount();
-        var extracted = available > contract.getCount() ? contract.getCount() : available;
-        if (leaved <= 0) {
-            leaved = 0;
-        }
-        contract.getSource().getStorage().getSet().put(contract.getType(), leaved);
-        contract.getSource().getConsumer().accept(extracted * contract.getPrice());
-        contract.getTarget().getConsumer().accept(-1 * extracted * contract.getPrice());
-        contract.getTarget().getStorage().getSet().compute(contract.getType(), (k, v) -> {
-            if (v == null) {
-                return extracted;
+    private void computeIndastry(Factory g, LaborExchange lExchange, Exchange globalExchange) {
+        g.setPayment(computePayment(g.getPayment(), lExchange, g.getSize(), g.getEmployee()));
+        int commonExpenses = g.getPayment() * g.getSize() / g.getSize();
+        double[] expectedIncomeArr = new double[g.getLines().size()];
+        double expectedIncomeTotal = 0;
+        int expensesTotal = 0;
+        int soldCandidat = -1;
+        for (int i = 0; i < g.getLines().size(); i++) {
+            var l = g.getLines().get(i);
+            double sold = l.getOutputContracts().stream().mapToDouble(c -> c.getCount()).sum() / l.getMaxProduction();
+            var exchangePrice = globalExchange.getPrice(l.getTemplate().getOutput(), l.getQuality());
+            l.setPrice(computePrice(sold, exchangePrice, l.getPrice()));
+            int expenses = commonExpenses * l.getSize();
+            for (int j = 0; j < l.getTemplate().getInputs().size(); j++) {
+                expenses += l.getInputsQuantity()[j] * l.getInputsPrice()[j] * l.getSize();
             }
-            return v + extracted;
-        });
-        sent.compute(contract.getType(), (k, v) -> {
-            if (v == null) {
-                return extracted;
+            expensesTotal += expenses;
+            expectedIncomeArr[i] = ((double) l.getMaxProduction() * l.getPrice()) / expenses;
+            if (sold > 0.9 && (soldCandidat < 0 || expectedIncomeArr[i] > expectedIncomeArr[soldCandidat])) {
+                soldCandidat = i;
             }
-            return v + extracted;
-        });
+            int[] bought = new int[l.getTemplate().getInputs().size()];
+            l.getInputContracts().forEach(ic -> {
+                bought[l.getTemplate().getInputsMapping().get(ic.getType())] += ic.getCount();
+            });
+            for (int j = 0; j < l.getTemplate().getInputs().size(); j++) {
+                int inputExchangePrice = globalExchange.getPrice(l.getTemplate().getInputs().get(i), l.getInputsQuality()[i]);
+                if (bought[j] >= l.getInputsQuantity()[j] * l.getSize() && expectedIncomeArr[i] < 1.3) {
+                    if (inputExchangePrice < l.getInputsPrice()[i]) {
+                        l.getInputsPrice()[i] = inputExchangePrice * 9 / 10;
+                    } else {
+                        l.getInputsPrice()[i] = l.getInputsPrice()[i] * 9 / 10;
+                    }
+                } else if (bought[j] < l.getInputsQuantity()[j]) {
+                    if (inputExchangePrice < l.getInputsPrice()[i]) {
+                        l.getInputsPrice()[i] = l.getInputsPrice()[i] * 12 / 10;
+                    } else {
+                        l.getInputsPrice()[i] = inputExchangePrice * 11 / 10;
+                    }
+                }
+            }
+            expectedIncomeTotal += expectedIncomeArr[i] * l.getSize();
+        }
+        expectedIncomeTotal /= g.getSize();
+        if (expectedIncomeTotal < 1.3) {
+            boolean reduced = false;
+            if (g.getSize() == g.getEmployee().size()) {
+                g.setPayment(g.getPayment() * 8 / 10);
+                reduced = true;
+            }
+            if (!reduced && expectedIncomeTotal < 1 && g.getIncome() < expensesTotal * PLANNING_PERIODS) {
+                g.setIncome(expensesTotal * PLANNING_PERIODS);
+                int lower = 0;
+                for (int i = 0; i < expectedIncomeArr.length; i++) {
+                    if (expectedIncomeArr[i] < expectedIncomeArr[lower]) {
+                        lower = i;
+                    }
+                }
+                var line = g.getLines().get(lower);
+                int sizeChange = (line.getSize() * 3 / 10) + 1;
+                g.setSize(g.getSize() - sizeChange);
+                line.setSize(line.getSize() - sizeChange);
+                if (line.getSize() <= 0) {
+                    g.getLines().remove(line);
+                }
+                if (g.getSize() <= 0) {
+                    g.getEmployee().forEach(pop -> {
+                        pop.setWorkplace(null);
+                        pop.setPayment(50);
+                    });
+                }
+            }
+        } else if (expectedIncomeTotal > 1.5 && g.getIncome() > 1000 && soldCandidat > 0) {
+            var line = g.getLines().get(soldCandidat);
+            line.setSize(line.getSize() + 1);
+            g.setSize(g.getSize() + 1);
+            g.setIncome(g.getIncome() - 1000);
+        }
+    }
+
+    private void computeGathering(ResourceGathering g, LaborExchange lExchange, Exchange globalExchange) {
+        g.setPayment(computePayment(g.getPayment(), lExchange, g.getSize(), g.getEmployee()));
+
+        double sold = g.getContracts().stream().mapToDouble(c -> c.getCount()).sum() / g.getMaxProduction();
+        var exchangePrice = globalExchange.getPrice(g.getType().getOutput(), g.getQuality());
+        g.setPrice(computePrice(sold, exchangePrice, g.getPrice()));
+
+        int expenses = g.getPayment() * g.getSize();
+        double expectedIncome = ((double) g.getMaxProduction() * g.getPrice()) / expenses;
+        if (expectedIncome < 1.3) {
+            boolean reduced = false;
+            if (g.getSize() == g.getEmployee().size()) {
+                g.setPayment(g.getPayment() * 8 / 10);
+                reduced = true;
+            }
+            if (!reduced && expectedIncome < 1 && g.getIncome() < expenses * PLANNING_PERIODS) {
+                int diff = ((g.getSize() * 3 / 10) + 1);
+                g.setSize(g.getSize() - diff);
+                g.setIncome(expenses * 3);
+                if (g.getSize() <= 0) {
+                    g.getEmployee().forEach(pop -> {
+                        pop.setWorkplace(null);
+                        pop.setPayment(50);
+                    });
+                }
+            }
+        } else if (expectedIncome > 1.5 && sold > 0.9 && g.getIncome() > 1000) {
+            g.setSize(g.getSize() + 1);
+            g.setIncome(g.getIncome() - 1000);
+        }
     }
 
     @Override
     public void repeat(TimelineEventLoop loop, LocalDate localDate) {
-        this.date = localDate.plus(70, ChronoUnit.DAYS);
+        this.date = localDate.plus(35 * PLANNING_PERIODS, ChronoUnit.DAYS);
         loop.putEvent(this);
     }
 }

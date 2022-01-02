@@ -22,7 +22,7 @@ public class LaborExchange {
     private final List<Population> sellOrders = new ArrayList<>();
 
     @Getter(AccessLevel.PUBLIC)
-    private int minimalWage = 0;
+    private int minimalWage = 10;
 
     public void reset() {
         buyOrders.clear();

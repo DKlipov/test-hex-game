@@ -38,4 +38,8 @@ public class ResourceGathering {
     public int getMaxProduction() {
         return (int) (getSize() * getEffective() * type.getBaseEffectively());
     }
+
+    public int getQuality() {
+        return 1;
+    }
 }

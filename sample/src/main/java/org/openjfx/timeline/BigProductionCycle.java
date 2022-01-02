@@ -117,13 +117,12 @@ public class BigProductionCycle implements TimelineEvent {
                 if (l.getPopulation().isEmpty()) {
                     return;
                 }
-                int buyPrice = globalExchange.getPrices().get(l.getType().getOutput()) * 7 / 10;
-                if (buyPrice <= 0) {
-                    buyPrice = globalExchange.getPrices().get(l.getType().getInput()) * 13 / 10;
-                }
+                int inputPrice = globalExchange.getPrice(l.getType().getInput(), 1);
+                int outputPrice = globalExchange.getPrice(l.getType().getOutput(), 1);
+                int price = (inputPrice + outputPrice) / 2;
                 clearContractsAndCreateNew(l.getOutputContracts(), exchange,
                         new ExchangeSellOrder(l.getType().getOutput(),
-                                1, buyPrice, 0,
+                                1, price, 0,
                                 new ContractSide(l.getOutputStorage(), i -> l.setIncome(l.getIncome() + i)),
                                 l.getOutputContracts()),
                         l.getProduction()
@@ -131,7 +130,7 @@ public class BigProductionCycle implements TimelineEvent {
 
                 clearContractsAndCreateBuy(l.getOutputContracts(), exchange,
                         new ExchangeBuyOrder(l.getType().getInput(),
-                                1, buyPrice, 0,
+                                1, price, 0,
                                 new ContractSide(l.getInputStorage(), i -> l.setIncome(l.getIncome() + i)),
                                 l.getInputContracts()),
                         l.getProduction());
@@ -358,6 +357,7 @@ public class BigProductionCycle implements TimelineEvent {
             sum -= (pg.getConsuming()[i] - old) * pg.getPrice()[i];
             i++;
             if (sum < breakLine) {
+                pg.getConsuming()[i] -= peopleConsuming.get(i).getValue() * province.getConsuming()[i];
                 return;
             }
         }
@@ -368,11 +368,12 @@ public class BigProductionCycle implements TimelineEvent {
             sum -= (pg.getConsuming()[i] - old) * pg.getPrice()[i];
             i++;
             if (sum < breakLine) {
+                pg.getConsuming()[i] -= peopleConsuming.get(i).getValue();
                 return;
             }
         }
-        var k = (sum / (1 + pg.getBaseIncome())) + 1;
-        if (k <= 1) {
+        double k = (((double) sum) / (1 + pg.getBaseIncome())) + 1;
+        if (k <= 1.1) {
             return;
         }
         for (int j = 0; j < peopleConsuming.size(); j++) {

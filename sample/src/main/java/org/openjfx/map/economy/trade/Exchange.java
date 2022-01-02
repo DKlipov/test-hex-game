@@ -5,7 +5,6 @@ import lombok.Getter;
 import org.openjfx.map.RegionControl;
 import org.openjfx.map.economy.Contract;
 import org.openjfx.map.economy.production.template.TradeGoodType;
-import org.openjfx.timeline.BigProductionCycle;
 import org.openjfx.utils.ResourceLoader;
 import org.openjfx.utils.SortedMultiset;
 
@@ -19,8 +18,18 @@ public class Exchange {
     private Exchange parent;
     private final List<ExchangeBuyOrder> buyOrders = new ArrayList<>();
     private final List<ExchangeSellOrder> sellOrders = new ArrayList<>();
-    private final Map<TradeGoodType, Integer> prices = new HashMap<>(ResourceLoader.getResources(TradeGoodType.class)
-            .values().stream().collect(Collectors.toMap(v -> v, v -> 2)));
+    private final Map<TradeGoodType, Map<Integer, ExchangeStats>> prices = new HashMap<>(
+            ResourceLoader.getResources(TradeGoodType.class)
+                    .values().stream().collect(Collectors.toMap(v -> v, v -> new TreeMap<>(Comparator.reverseOrder()))));
+
+    public int getPrice(TradeGoodType goodType, int quality) {
+        for (var stat : prices.get(goodType).entrySet()) {
+            if (stat.getKey() <= quality) {
+                return stat.getValue().getPrice();
+            }
+        }
+        return 0;
+    }
 
     public void reset() {
         sellOrders.clear();
@@ -32,6 +41,9 @@ public class Exchange {
     }
 
     public void buy(ExchangeBuyOrder buyOrder) {
+        if (buyOrder.getPrice() <= 0 || buyOrder.getCount() <= 0) {
+            return;
+        }
         buyOrders.add(buyOrder);
     }
 
@@ -51,19 +63,9 @@ public class Exchange {
             }
         }));
         List<Contract> result = new ArrayList<>();
+        prices.values().forEach(Map::clear);
         getBuyOrders().forEach(b -> {
-            if (b.getPrice() <= 0) {
-                return;
-            }
-            if (sells.get(b.getType()) == null) {
-                if (getParent() != null && b.getCount() > 0) {
-                    getParent().buy(b);
-                } else if (parent == null) {
-                    prices.put(b.getType(), b.getPrice());
-                }
-                return;
-            }
-            for (var or : sells.get(b.getType())) {
+            for (var or : sells.getOrDefault(b.getType(), Set.of())) {
                 if (b.getCount() == 0) {
                     return;
                 }
@@ -84,25 +86,39 @@ public class Exchange {
                     b.setCount(b.getCount() - or.getCount());
                     or.setCount(0);
                 }
-                int price = b.getPrice();
+                int price = (b.getPrice() + or.getPrice()) / 2;
                 Contract contract = new Contract(or.getStorage(), b.getStorage(), b.getType(), or.getQuality(), price, value);
                 or.getContracts().add(contract);
                 b.getContracts().add(contract);
                 result.add(contract);
-                if (parent == null) {
-                    prices.put(b.getType(), price);
-                }
+                prices.get(b.getType()).compute(b.getQuality(), (k, v) -> {
+                    if (v == null) {
+                        return new ExchangeStats(price, value, 0);
+                    } else {
+                        v.setPrice(b.getPrice());
+                        v.setVolume(v.getVolume() + value);
+                        return v;
+                    }
+                });
             }
-            if (getParent() != null && b.getCount() > 0) {
+            if (getParent() != null) {
                 getParent().buy(b);
             }
+            prices.get(b.getType()).compute(b.getQuality(), (k, v) -> {
+                if (v == null) {
+                    return new ExchangeStats(b.getPrice(), 0, b.getCount());
+                } else {
+                    v.setPrice(b.getPrice());
+                    v.setExtraDemand(v.getExtraDemand() + b.getCount());
+                    return v;
+                }
+            });
         });
-        if (getParent() == null) {
-            return result;
+        if (getParent() != null) {
+            sellOrders.stream()
+                    .filter(c -> c.getCount() > 0)
+                    .forEach(c -> parent.sell(c));
         }
-        sellOrders.stream()
-                .filter(c -> c.getCount() > 0)
-                .forEach(c -> parent.sell(c));
         return result;
     }
 }

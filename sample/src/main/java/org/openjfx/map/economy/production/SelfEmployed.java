@@ -29,6 +29,6 @@ public class SelfEmployed {
     private int payment;
 
     public int getProduction() {
-        return getPopulation().size() * 10;
+        return getPopulation().size() * type.getEffectivency();
     }
 }
