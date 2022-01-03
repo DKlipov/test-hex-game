@@ -39,7 +39,7 @@ public class LaborExchange {
     public void computeExchange() {
         int i = 0;
         for (var place : buyOrders) {
-            if (place.getPayment() < 0) {
+            if (place.getPayment() <= 0) {
                 return;
             }
             while (i < sellOrders.size() && place.getCount() > 0) {

@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 public class Exchange {
     private RegionControl place;
     private Exchange parent;
-    private final List<ExchangeBuyOrder> buyOrders = new ArrayList<>();
+    private final SortedMultiset<ExchangeBuyOrder> buyOrders = new SortedMultiset<>(Comparator.comparing(ExchangeBuyOrder::getPrice).reversed());
     private final List<ExchangeSellOrder> sellOrders = new ArrayList<>();
     private final Map<TradeGoodType, Map<Integer, ExchangeStats>> prices = new HashMap<>(
             ResourceLoader.getResources(TradeGoodType.class)
@@ -73,7 +73,7 @@ public class Exchange {
                     getParent().buy(b);
                     return;
                 }
-                if (or.getPrice() > b.getPrice()) {
+                if (or.getPrice() > b.getPrice() || or.getCount() <= 0) {
                     continue;
                 }
                 int value;
@@ -91,7 +91,7 @@ public class Exchange {
                 or.getContracts().add(contract);
                 b.getContracts().add(contract);
                 result.add(contract);
-                prices.get(b.getType()).compute(b.getQuality(), (k, v) -> {
+                prices.get(b.getType()).compute(or.getQuality(), (k, v) -> {
                     if (v == null) {
                         return new ExchangeStats(price, value, 0);
                     } else {

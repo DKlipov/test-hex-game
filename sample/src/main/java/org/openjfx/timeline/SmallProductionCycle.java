@@ -97,7 +97,7 @@ public class SmallProductionCycle implements TimelineEvent {
             return v;
         }
         var ge = dataStorage.getExchanges().get(dataStorage);
-        int inputPrice = ge.getPrice(type.getInput(), 1);
+        int inputPrice = ge.getPrice(type.getInput(), 1)+1;
         int outputPrice = ge.getPrice(type.getOutput(), 1);
         return (outputPrice / inputPrice) * type.getEffectivency();
     }

@@ -21,7 +21,7 @@ public class Factory {
 
     private Company owner;
 
-    private List<ProductionLine> lines;
+    private final List<ProductionLine> lines=new ArrayList<>();
 
     private int income;
 

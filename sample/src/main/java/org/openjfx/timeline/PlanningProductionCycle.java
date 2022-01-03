@@ -1,17 +1,26 @@
 package org.openjfx.timeline;
 
 import lombok.Getter;
+import org.apache.commons.lang3.tuple.Pair;
 import org.openjfx.map.DataStorage;
 import org.openjfx.map.Population;
+import org.openjfx.map.economy.Company;
 import org.openjfx.map.economy.production.Factory;
+import org.openjfx.map.economy.production.ProductionLine;
 import org.openjfx.map.economy.production.ResourceGathering;
+import org.openjfx.map.economy.production.template.BaseProductionTemplate;
+import org.openjfx.map.economy.production.template.FactoryType;
+import org.openjfx.map.economy.production.template.ResourceGatheringType;
+import org.openjfx.map.economy.production.template.TradeGoodType;
 import org.openjfx.map.economy.trade.Exchange;
 import org.openjfx.map.economy.trade.LaborExchange;
+import org.openjfx.utils.ResourceLoader;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.Map;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
@@ -23,13 +32,22 @@ public class PlanningProductionCycle implements TimelineEvent {
 
     private final int PLANNING_PERIODS = 2;
 
+    private final Map<TradeGoodType, Pair<FactoryType, BaseProductionTemplate>> factories;
+    private final Map<TradeGoodType, ResourceGatheringType> gatherings;
+
     public PlanningProductionCycle(DataStorage dataStorage) {
         this.dataStorage = dataStorage;
         date = LocalDate.parse("0000-01-01");
+        factories = ResourceLoader.getResources(FactoryType.class).values().stream()
+                .flatMap(v -> v.getTemplates().stream().map(t -> Pair.of(v, t)))
+                .collect(Collectors.toMap(v -> v.getRight().getOutput(), v -> v));
+        gatherings = ResourceLoader.getResources(ResourceGatheringType.class).values().stream()
+                .collect(Collectors.toMap(v -> v.getOutput(), v -> v));
     }
 
     @Override
     public void execute() {
+        createNewIndustry();
         dataStorage.getRegionsEconomy().forEach(re -> {
             var lExchange = dataStorage.getLaborExchanges().get(re.getRegion());
             var globalExchange = dataStorage.getExchanges().get(dataStorage);
@@ -38,6 +56,61 @@ public class PlanningProductionCycle implements TimelineEvent {
             re.getGatherings().removeIf(g -> g.getSize() <= 0);
             re.getIndustry().removeIf(g -> g.getSize() <= 0);
         });
+    }
+
+    private void createNewIndustry() {
+        var freeConsume = getFreeConsume(10000);
+        if (freeConsume == null) {
+            return;
+        }
+        if (factories.get(freeConsume) != null) {
+            for (var e : dataStorage.getRegionsEconomy()) {
+                if (!e.getRegion().isCity() || !e.getIndustry().isEmpty()) {
+                    continue;
+                }
+                var template = factories.get(freeConsume);
+                var factory = new Factory(template.getKey(), 1, new Company(), 0, 0);
+                var iq = template.getRight().getInputs().stream().mapToInt(in -> 1).toArray();
+                var iqq = template.getRight().getInputs().stream().mapToInt(in -> 1).toArray();
+                var ip = template.getRight().getInputs().stream().mapToInt(in -> 1).toArray();
+                factory.getLines().add(new ProductionLine(template.getRight(), 1.0, 1,
+                        iq, iqq, ip, 1, 2, 1.0));
+                e.getIndustry().add(factory);
+            }
+            System.out.println("\n\n\nNot found suitable place for " + freeConsume + "\n\n\n");
+            return;
+        } else if (gatherings.get(freeConsume) != null) {
+            var template = gatherings.get(freeConsume);
+            for (var e : dataStorage.getRegionsEconomy()) {
+                if ((template.getTerrainRequirements() != null && e.getRegion().getTerrain() != template.getTerrainRequirements())
+                        || (template.getResourceRequirements() != null && e.getRegion().getResource() != template.getResourceRequirements())
+                        || (e.getRegion().getPopulation().size() < (e.getGatherings().size() + 1) * 4)) {
+                    continue;
+                }
+                var gathering = new ResourceGathering(template, 1,
+                        1.0, new Company(), 1000, 100, 2);
+                e.getGatherings().add(gathering);
+            }
+            System.out.println("\n\n\nNot found suitable place for " + freeConsume + "\n\n\n");
+            return;
+        }
+        throw new RuntimeException("Unexpoected good type");
+    }
+
+    private TradeGoodType getFreeConsume(int sensivity) {
+        var gle = dataStorage.getExchanges().get(dataStorage);
+        var maxDem = 0;
+        TradeGoodType max = null;
+        for (var e : gle.getPrices().entrySet()) {
+            int extraD = e.getValue().values().stream().mapToInt(s -> s.getExtraDemand()).sum();
+            if (extraD > maxDem) {
+                max = e.getKey();
+            }
+        }
+        if (maxDem > sensivity) {
+            return max;
+        }
+        return null;
     }
 
     private int computePayment(int basePayment, LaborExchange lExchange, int size, Collection<Population> employee) {

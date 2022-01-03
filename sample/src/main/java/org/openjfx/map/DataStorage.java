@@ -145,7 +145,7 @@ public class DataStorage {
         var types = new ArrayList<>(ResourceLoader.getResources(FactoryType.class).values());
         int i = 0;
         for (var c : cities) {
-            Factory factory = new Factory(types.get(i), types.get(i).getTemplates().size(), new Company(), new ArrayList<>(), 1000, 100);
+            Factory factory = new Factory(types.get(i), types.get(i).getTemplates().size(), new Company(), 1000, 100);
             factory.getFactoryType().getTemplates().forEach(template -> {
                 var iq = template.getInputs().stream().mapToInt(in -> 1).toArray();
                 var iqq = template.getInputs().stream().mapToInt(in -> 1).toArray();

@@ -18,13 +18,6 @@
         ]
       },
       {
-        "output": "RUBBER",
-        "inputs": [
-          "RAW_RUBBER",
-          "OIL"
-        ]
-      },
-      {
         "output": "PLASTIC",
         "inputs": [
           "OIL"

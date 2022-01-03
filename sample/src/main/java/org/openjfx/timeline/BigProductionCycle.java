@@ -76,18 +76,16 @@ public class BigProductionCycle implements TimelineEvent {
                         }));
                         for (int i = 0; i < l.getTemplate().getInputs().size(); i++) {
                             var it = l.getTemplate().getInputs().get(i);
-                            var exI = expected.get(it);
-                            int ex = exI == null ? 0 : exI;
-                            if (ex < l.getInputsQuantity()[i]) {
-                                exchange.buy(
-                                        new ExchangeBuyOrder(it,
-                                                l.getInputsQuality()[i], l.getInputsPrice()[i],
-                                                (l.getMaxProduction() * l.getInputsQuantity()[i]) - ex,
-                                                new ContractSide(l.getInputStorage(), inc -> f.setIncome(f.getIncome() + inc)),
-                                                l.getInputContracts()
-                                        )
-                                );
-                            }
+                            clearContractsAndCreateBuy(l.getInputContracts(), exchange,
+                                    new ExchangeBuyOrder(it,
+                                            l.getInputsQuality()[i], l.getInputsPrice()[i],
+                                            0,
+                                            new ContractSide(l.getInputStorage(), inc -> f.setIncome(f.getIncome() + inc)),
+                                            l.getInputContracts()
+                                    ),
+                                    l.getMaxProduction() * l.getInputsQuantity()[i],
+                                    it
+                            );
                         }
                     }));
                     re.getGatherings().forEach(g -> {
@@ -133,7 +131,7 @@ public class BigProductionCycle implements TimelineEvent {
                                 1, price, 0,
                                 new ContractSide(l.getInputStorage(), i -> l.setIncome(l.getIncome() + i)),
                                 l.getInputContracts()),
-                        l.getProduction());
+                        l.getProduction(), l.getType().getInput());
 
             });
         });
@@ -170,16 +168,34 @@ public class BigProductionCycle implements TimelineEvent {
                 return v + so.getCount();
             }
         }));
+        Set<String> set = new TreeSet<>(Comparator.naturalOrder());
+
         sell.forEach((key, value) -> {
-            System.out.println("\t| " + value + "\t | " + buy.getOrDefault(key, 0) + "\t |\t\t" + key.getId());
+            set.add(printTemplate(key.getId(), value, buy.getOrDefault(key, 0), globalExchange.getPrice(key, 100)));
             buy.put(key, 0);
         });
         buy.forEach((k, v) -> {
             if (v == 0) {
                 return;
             }
-            System.out.println("\t| 0  \t | " + v + "\t |\t\t" + k.getId());
+            set.add(printTemplate(k.getId(), 0, v, globalExchange.getPrice(k, 100)));
         });
+        set.forEach(System.out::println);
+    }
+
+    private String printTemplate(String id, int sell, int buy, int price) {
+        return ("| " + format(id, 8) + " | " + format(Integer.toString(sell), 6) + " | " + format(Integer.toString(buy), 6) + " | "
+                + format(Integer.toString(price), 4));
+    }
+
+    private String format(String width, int size) {
+        if (width.length() > size) {
+            return width.substring(0, size);
+        } else if (width.length() == size) {
+            return width;
+        }
+        var template = "                                 ";
+        return width + template.substring(0, size - width.length());
     }
 
     private Set<String> printOrdered(Map<TradeGoodType, Integer> map) {
@@ -272,7 +288,7 @@ public class BigProductionCycle implements TimelineEvent {
         });
         if (province.getPopulationGroups().isEmpty()) {
             province.getPopulationGroups().add(createGroup(province, 0));
-            province.getPopulationGroups().add(createGroup(province, 50));
+            province.getPopulationGroups().add(createGroup(province, 10));
         }
         province.getRegions()
                 .stream().flatMap(re -> re.getPopulation().stream())
@@ -312,29 +328,14 @@ public class BigProductionCycle implements TimelineEvent {
                 }
             });
             for (int i = 0; i < peopleConsuming.size(); i++) {
-                if (pg.getConsuming()[i] * pg.getPopulation().size() * 1.2 > expectedC[i]) {
-                    int ci = i;
-                    pg.getContracts().removeIf(c -> c.getType() == peopleConsuming.get(ci));
-                    expectedC[i] = 0;
-                }
-                int diff = (int) (pg.getConsuming()[i] * pg.getPopulation().size() - expectedC[i]);
-                if (diff > 0 && expectedC[i] == 0) {
-                    exchange.buy(new ExchangeBuyOrder(peopleConsuming.get(i), -1, pg.getPrice()[i],
-                            diff,
-                            new ContractSide(pg.getStorage(), inc -> pg.setExpenses(pg.getExpenses() + inc)),
-                            pg.getContracts()));
-                } else if (diff > 0) {
-                    if (diff > pg.getConsuming()[i] * pg.getPopulation().size() * 2) {
-                        pg.getPrice()[i] *= 2;
-                    } else {
-                        pg.getPrice()[i] *= pg.getConsuming()[i] * pg.getPopulation().size();
-                        pg.getPrice()[i] /= diff;
-                        exchange.buy(new ExchangeBuyOrder(peopleConsuming.get(i), -1, pg.getPrice()[i],
-                                diff,
+                clearContractsAndCreateBuy(pg.getContracts(), exchange,
+                        new ExchangeBuyOrder(peopleConsuming.get(i), 1, pg.getPrice()[i],
+                                0,
                                 new ContractSide(pg.getStorage(), inc -> pg.setExpenses(pg.getExpenses() + inc)),
-                                pg.getContracts()));
-                    }
-                }
+                                pg.getContracts()),
+                        (int) (pg.getConsuming()[i] * pg.getPopulation().size()),
+                        peopleConsuming.get(i)
+                );
             }
         });
     }
@@ -358,6 +359,7 @@ public class BigProductionCycle implements TimelineEvent {
             i++;
             if (sum < breakLine) {
                 pg.getConsuming()[i] -= peopleConsuming.get(i).getValue() * province.getConsuming()[i];
+                reducePrices(pg, expectedConsuming);
                 return;
             }
         }
@@ -366,11 +368,12 @@ public class BigProductionCycle implements TimelineEvent {
             double old = pg.getConsuming()[i];
             pg.getConsuming()[i] += peopleConsuming.get(i).getValue();
             sum -= (pg.getConsuming()[i] - old) * pg.getPrice()[i];
-            i++;
             if (sum < breakLine) {
                 pg.getConsuming()[i] -= peopleConsuming.get(i).getValue();
+                reducePrices(pg, expectedConsuming);
                 return;
             }
+            i++;
         }
         double k = (((double) sum) / (1 + pg.getBaseIncome())) + 1;
         if (k <= 1.1) {
@@ -378,6 +381,15 @@ public class BigProductionCycle implements TimelineEvent {
         }
         for (int j = 0; j < peopleConsuming.size(); j++) {
             pg.getPrice()[j] *= k;
+        }
+    }
+
+    private void reducePrices(PopulationGroup pg, int[] expectedConsuming) {
+        for (int i = 0; i < peopleConsuming.size(); i++) {
+            if (pg.getConsuming()[i] <= 0.9 * expectedConsuming[i]) {
+                pg.getPrice()[i] *= 8;
+                pg.getPrice()[i] /= 10;
+            }
         }
     }
 
@@ -402,19 +414,25 @@ public class BigProductionCycle implements TimelineEvent {
     }
 
     private void clearContractsAndCreateBuy(List<Contract> contracts, Exchange exchange,
-                                            ExchangeBuyOrder order, int maxRequiredSize) {
+                                            ExchangeBuyOrder order, int maxRequiredSize, TradeGoodType goodType) {
         contracts.removeIf(c -> c.getCount() <= 0);
         int expected = contracts.stream()
+                .filter(c -> c.getType() == goodType)
                 .map(Contract::getCount)
                 .reduce(0, Integer::sum);
-        int diff = expected - maxRequiredSize;
+        int diff = expected - Math.max(maxRequiredSize, 0);
         if (diff > 0) {
+            int i = 0;
             while (diff > 0 && !contracts.isEmpty()) {
-                var c = contracts.remove(0);
+                while (i < contracts.size() && contracts.get(i).getType() != goodType) {
+                    i++;
+                }
+                var c = contracts.remove(i);
                 diff -= c.getCount();
                 c.setCount(0);
             }
-        } else {
+        }
+        if (diff < 0) {
             diff *= -1;
             order.setCount(diff);
             exchange.buy(order);

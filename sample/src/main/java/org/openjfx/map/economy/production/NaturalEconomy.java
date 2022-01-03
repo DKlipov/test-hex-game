@@ -25,7 +25,7 @@ public class NaturalEconomy {
     private final List<Contract> contracts = new ArrayList<>();
     private int income;
     private int payment;
-    private final int effectivency = 14;
+    private final int effectivency = 8;
 
     public int getProduction() {
         return Math.min(getSize(), getPopulation().size()) * effectivency;
