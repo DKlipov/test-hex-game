@@ -29,10 +29,11 @@ public class SmallProductionCycle implements TimelineEvent {
     @Override
     public void execute() {
         selfEmployeePredicted.clear();
+        BigProductionCycle.unemployed.forEach(pop -> pop.setPayment(50));
         dataStorage.getRegionsEconomy()
                 .forEach(re -> {
                     re.getGatherings().forEach(g -> {
-                        int output = Math.min(g.getEmployee().size() / g.getSize(), 1) * g.getMaxProduction();
+                        int output = (int) (Math.min(g.getEmployee().size(), g.getSize()) * g.getEffective() * g.getType().getBaseEffectively());
                         g.getStorage().getSet().compute(g.getType().getOutput(), (k, v) -> {
                             if (v == null) {
                                 return output;
@@ -48,7 +49,7 @@ public class SmallProductionCycle implements TimelineEvent {
                     });
                     computeNative(re.getNaturalEconomy());
                     re.getIndustry().forEach(i -> {
-                        double k = i.getEmployee().size() / i.getSize();
+                        double k = 1.0 * i.getEmployee().size() / i.getSize();
                         i.getLines().forEach(g -> {
                             double localK = k;
                             for (int inp = 0; inp < g.getTemplate().getInputs().size(); inp++) {
@@ -56,9 +57,10 @@ public class SmallProductionCycle implements TimelineEvent {
                                     continue;
                                 }
                                 var tg = g.getTemplate().getInputs().get(inp);
-                                double ik = g.getInputStorage().getSet().getOrDefault(tg, 0) / g.getInputsQuantity()[inp];
+                                double ik = 1.0 * g.getInputStorage().getSet().getOrDefault(tg, 0) / (g.getInputsQuantity()[inp] * g.getMaxProduction());
                                 localK = Math.min(localK, ik);
                             }
+                            g.getInputStorage().getSet().clear();
                             int output = (int) (localK * g.getMaxProduction());
                             g.getOutputStorage().getSet().compute(g.getTemplate().getOutput(), (key, v) -> {
                                 if (v == null) {
@@ -97,7 +99,7 @@ public class SmallProductionCycle implements TimelineEvent {
             return v;
         }
         var ge = dataStorage.getExchanges().get(dataStorage);
-        int inputPrice = ge.getPrice(type.getInput(), 1)+1;
+        int inputPrice = ge.getPrice(type.getInput(), 1) + 1;
         int outputPrice = ge.getPrice(type.getOutput(), 1);
         return (outputPrice / inputPrice) * type.getEffectivency();
     }

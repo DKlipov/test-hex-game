@@ -2,11 +2,13 @@ package org.openjfx.timeline;
 
 import lombok.Getter;
 import org.openjfx.map.DataStorage;
+import org.openjfx.map.Population;
 import org.openjfx.map.PopulationGroup;
 import org.openjfx.map.Province;
 import org.openjfx.map.economy.Contract;
 import org.openjfx.map.economy.ContractSide;
 import org.openjfx.map.economy.RegionEconomy;
+import org.openjfx.map.economy.production.SelfEmployed;
 import org.openjfx.map.economy.production.template.TradeGoodGroup;
 import org.openjfx.map.economy.production.template.TradeGoodType;
 import org.openjfx.map.economy.trade.Exchange;
@@ -26,6 +28,8 @@ public class BigProductionCycle implements TimelineEvent {
     private final DataStorage dataStorage;
     @Getter
     private LocalDate date;
+
+    public final static List<Contract> allContracts = new ArrayList<>();
 
     private final List<TradeGoodType> peopleConsuming = ResourceLoader.getResources(TradeGoodType.class)
             .values().stream()
@@ -57,37 +61,7 @@ public class BigProductionCycle implements TimelineEvent {
                 .forEach(re -> {
                     setEmployee(re);
                     var exchange = dataStorage.getExchanges().get(re.getRegion().getProvince());
-                    re.getIndustry().forEach(f -> f.getLines().forEach(l -> {
-                        clearContractsAndCreateNew(l.getOutputContracts(), exchange,
-                                new ExchangeSellOrder(l.getTemplate().getOutput(),
-                                        l.getQuality(), l.getPrice(), 0,
-                                        new ContractSide(l.getOutputStorage(), i -> f.setIncome(f.getIncome() + i)),
-                                        l.getOutputContracts()),
-                                (int) (l.getMaxProduction() * l.getWorkload())
-                        );
-                        l.getInputContracts().removeIf(c -> c.getCount() <= 0);
-                        Map<TradeGoodType, Integer> expected = new HashMap<>();
-                        l.getInputContracts().forEach(ic -> expected.compute(ic.getType(), (k, v) -> {
-                            if (v == null) {
-                                return ic.getCount();
-                            } else {
-                                return v + ic.getCount();
-                            }
-                        }));
-                        for (int i = 0; i < l.getTemplate().getInputs().size(); i++) {
-                            var it = l.getTemplate().getInputs().get(i);
-                            clearContractsAndCreateBuy(l.getInputContracts(), exchange,
-                                    new ExchangeBuyOrder(it,
-                                            l.getInputsQuality()[i], l.getInputsPrice()[i],
-                                            0,
-                                            new ContractSide(l.getInputStorage(), inc -> f.setIncome(f.getIncome() + inc)),
-                                            l.getInputContracts()
-                                    ),
-                                    l.getMaxProduction() * l.getInputsQuantity()[i],
-                                    it
-                            );
-                        }
-                    }));
+                    computeIndustry(re, exchange);
                     re.getGatherings().forEach(g -> {
                         clearContractsAndCreateNew(g.getContracts(), exchange,
                                 new ExchangeSellOrder(g.getType().getOutput(),
@@ -112,27 +86,7 @@ public class BigProductionCycle implements TimelineEvent {
             var exchange = dataStorage.getExchanges().get(c);
             c.getProvinces().stream()
                     .map(Province::getSelfEmployed).flatMap(Collection::stream).forEach(l -> {
-                if (l.getPopulation().isEmpty()) {
-                    return;
-                }
-                int inputPrice = globalExchange.getPrice(l.getType().getInput(), 1);
-                int outputPrice = globalExchange.getPrice(l.getType().getOutput(), 1);
-                int price = (inputPrice + outputPrice) / 2;
-                clearContractsAndCreateNew(l.getOutputContracts(), exchange,
-                        new ExchangeSellOrder(l.getType().getOutput(),
-                                1, price, 0,
-                                new ContractSide(l.getOutputStorage(), i -> l.setIncome(l.getIncome() + i)),
-                                l.getOutputContracts()),
-                        l.getProduction()
-                );
-
-                clearContractsAndCreateBuy(l.getOutputContracts(), exchange,
-                        new ExchangeBuyOrder(l.getType().getInput(),
-                                1, price, 0,
-                                new ContractSide(l.getInputStorage(), i -> l.setIncome(l.getIncome() + i)),
-                                l.getInputContracts()),
-                        l.getProduction(), l.getType().getInput());
-
+                computeSelfEmplyed(l, globalExchange, exchange);
             });
         });
         dataStorage.getCountryData().values().stream().flatMap(c -> c.getProvinces().stream()).forEach(this::createConsuming);
@@ -140,12 +94,68 @@ public class BigProductionCycle implements TimelineEvent {
         outResults();
     }
 
-    private final List<Contract> allContracts = new ArrayList<>();
+    private void computeSelfEmplyed(SelfEmployed l, Exchange exchange, Exchange globalExchange) {
+        if (l.getPopulation().isEmpty()) {
+            return;
+        }
+        int inputPrice = globalExchange.getPrice(l.getType().getInput(), 1);
+        int outputPrice = globalExchange.getPrice(l.getType().getOutput(), 1);
+        int price = (inputPrice + outputPrice) / 2;
+        clearContractsAndCreateNew(l.getOutputContracts(), exchange,
+                new ExchangeSellOrder(l.getType().getOutput(),
+                        1, price, 0,
+                        new ContractSide(l.getOutputStorage(), i -> l.setIncome(l.getIncome() + i)),
+                        l.getOutputContracts()),
+                l.getProduction()
+        );
+
+        clearContractsAndCreateBuy(l.getOutputContracts(), exchange,
+                new ExchangeBuyOrder(l.getType().getInput(),
+                        1, price, 0,
+                        new ContractSide(l.getInputStorage(), i -> l.setIncome(l.getIncome() + i)),
+                        l.getInputContracts()),
+                l.getProduction(), l.getType().getInput());
+    }
+
+    private void computeIndustry(RegionEconomy re, Exchange exchange) {
+        re.getIndustry().forEach(f -> f.getLines().forEach(l -> {
+            clearContractsAndCreateNew(l.getOutputContracts(), exchange,
+                    new ExchangeSellOrder(l.getTemplate().getOutput(),
+                            l.getQuality(), l.getPrice(), 0,
+                            new ContractSide(l.getOutputStorage(), i -> f.setIncome(f.getIncome() + i)),
+                            l.getOutputContracts()),
+                    (int) (l.getMaxProduction() * l.getWorkload())
+            );
+            l.getInputContracts().removeIf(c -> c.getCount() <= 0);
+            Map<TradeGoodType, Integer> expected = new HashMap<>();
+            l.getInputContracts().forEach(ic -> expected.compute(ic.getType(), (k, v) -> {
+                if (v == null) {
+                    return ic.getCount();
+                } else {
+                    return v + ic.getCount();
+                }
+            }));
+            for (int i = 0; i < l.getTemplate().getInputs().size(); i++) {
+                var it = l.getTemplate().getInputs().get(i);
+                clearContractsAndCreateBuy(l.getInputContracts(), exchange,
+                        new ExchangeBuyOrder(it,
+                                l.getInputsQuality()[i], l.getInputsPrice()[i],
+                                0,
+                                new ContractSide(l.getInputStorage(), inc -> f.setIncome(f.getIncome() + inc)),
+                                l.getInputContracts()
+                        ),
+                        l.getMaxProduction() * l.getInputsQuantity()[i],
+                        it
+                );
+            }
+        }));
+    }
+
 
     private void outResults() {
         allContracts.removeIf(c -> c.getCount() <= 0);
-        System.out.println("New contracts: ");
-        reduce(newContracts).forEach(s -> System.out.println('\t' + s));
+//        System.out.println("New contracts: ");
+//        reduce(newContracts).forEach(s -> System.out.println('\t' + s));
         allContracts.addAll(newContracts);
         System.out.println("Totally contracts: ");
         reduce(allContracts).forEach(s -> System.out.println('\t' + s));
@@ -233,19 +243,17 @@ public class BigProductionCycle implements TimelineEvent {
         var pops = economy.getRegion().getPopulation();
         var lExchange = dataStorage.getLaborExchanges().get(economy.getRegion());
         lExchange.reset();
+        int wage = lExchange.getMinimalWage();
         int counter = 100;
         for (var pop : pops) {
-            if (pop.getWorkplace() == null) {
-                pop.setPayment(50);
-                continue;
-            }
-            if (pop.getPayment() >= lExchange.getMinimalWage()) {
+            if (pop.getWorkplace() == null || pop.getPayment() > wage) {
                 continue;
             }
             if (counter < 5) {
                 counter++;
                 continue;
             }
+            counter = 0;
             pop.getWorkplace().remove(pop);
             pop.setWorkplace(null);
         }
@@ -276,8 +284,13 @@ public class BigProductionCycle implements TimelineEvent {
                 lExchange.sell(pop);
             }
         });
+        lExchange.buy(new LaborOrder(51, 500000, unemployed));
         lExchange.computeExchange();
     }
+
+    private final List<Population> unemployed1 = new ArrayList<>();
+
+    public final static List<Population> unemployed = new ArrayList<>();
 
     private void createConsuming(Province province) {
         var exchange = dataStorage.getExchanges().get(province);
@@ -288,7 +301,7 @@ public class BigProductionCycle implements TimelineEvent {
         });
         if (province.getPopulationGroups().isEmpty()) {
             province.getPopulationGroups().add(createGroup(province, 0));
-            province.getPopulationGroups().add(createGroup(province, 10));
+            province.getPopulationGroups().add(createGroup(province, 50));
         }
         province.getRegions()
                 .stream().flatMap(re -> re.getPopulation().stream())
@@ -320,13 +333,13 @@ public class BigProductionCycle implements TimelineEvent {
             pg.getContracts().removeIf(c -> c.getCount() == 0);
             pg.getContracts().forEach(c -> expectedC[peopleConsumingMapping.get(c.getType())] += c.getCount());
             recalculatePrices(pg, expectedC, province);
-            pg.getContracts().forEach(c -> {
-                int i = peopleConsumingMapping.get(c.getType());
-                if (pg.getPrice()[i] * 14 / 10 < c.getPrice()) {
-                    expectedC[i] -= c.getCount();
-                    c.setCount(0);
-                }
-            });
+//            pg.getContracts().forEach(c -> {
+//                int i = peopleConsumingMapping.get(c.getType());
+//                if (pg.getPrice()[i] * 14 / 10 < c.getPrice()) {
+//                    expectedC[i] -= c.getCount();
+//                    c.setCount(0);
+//                }
+//            });
             for (int i = 0; i < peopleConsuming.size(); i++) {
                 clearContractsAndCreateBuy(pg.getContracts(), exchange,
                         new ExchangeBuyOrder(peopleConsuming.get(i), 1, pg.getPrice()[i],
@@ -342,7 +355,7 @@ public class BigProductionCycle implements TimelineEvent {
 
     private void recalculatePrices(PopulationGroup pg, int[] expectedConsuming, Province province) {
         for (int i = 0; i < peopleConsuming.size(); i++) {
-            if (pg.getConsuming()[i] > expectedConsuming[i]) {
+            if (pg.getConsuming()[i] * pg.getPopulation().size() > expectedConsuming[i]) {
                 pg.getPrice()[i] *= 12;
                 pg.getPrice()[i] /= 10;
                 pg.getPrice()[i] += 1;

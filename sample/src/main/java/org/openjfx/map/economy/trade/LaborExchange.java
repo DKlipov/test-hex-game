@@ -26,6 +26,7 @@ public class LaborExchange {
 
     public void reset() {
         buyOrders.clear();
+        sellOrders.clear();
     }
 
     public void sell(Population population) {
@@ -42,13 +43,17 @@ public class LaborExchange {
             if (place.getPayment() <= 0) {
                 return;
             }
-            while (i < sellOrders.size() && place.getCount() > 0) {
+            minimalWage = place.getPayment() * 8 / 10;
+            while (place.getCount() > 0) {
+                if (i >= sellOrders.size()) {
+                    return;
+                }
                 place.setCount(place.getCount() - 1);
                 place.getTarget().add(sellOrders.get(i));
                 sellOrders.get(i).setWorkplace(place.getTarget());
                 i++;
             }
-            minimalWage = place.getPayment() * 8 / 10;
+
         }
 
     }

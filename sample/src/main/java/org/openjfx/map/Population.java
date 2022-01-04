@@ -10,7 +10,7 @@ import java.util.Collection;
 public class Population {
     private Nation nation;
     private int budget = 1000;
-    private int payment = 100;
+    private int payment = 0;
     private Collection<Population> workplace;
 
     public Population(Nation nation) {

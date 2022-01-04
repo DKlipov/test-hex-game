@@ -113,6 +113,9 @@ public class Exchange {
                     return v;
                 }
             });
+            if (getParent() != null && b.getCount() > 0) {
+                getParent().buy(b);
+            }
         });
         if (getParent() != null) {
             sellOrders.stream()

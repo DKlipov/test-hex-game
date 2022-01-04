@@ -34,7 +34,7 @@ public class TimeThread {
             timestamp = milli;
             return;
         }
-        if ((milli - timestamp) > (1000 / speedPane.getSpeed()/speedPane.getSpeed())) {
+        if ((milli - timestamp) > (100 / speedPane.getSpeed()/speedPane.getSpeed())) {
             timestamp = milli;
             speedPane.setDate(speedPane.getDate().plus(1, ChronoUnit.DAYS));
             var date = speedPane.getDate();

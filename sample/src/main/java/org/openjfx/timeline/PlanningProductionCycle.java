@@ -47,7 +47,10 @@ public class PlanningProductionCycle implements TimelineEvent {
 
     @Override
     public void execute() {
-        createNewIndustry();
+        var freeConsume = getFreeConsume(10000);
+        if (freeConsume != null) {
+            placeNewIndustry(freeConsume);
+        }
         dataStorage.getRegionsEconomy().forEach(re -> {
             var lExchange = dataStorage.getLaborExchanges().get(re.getRegion());
             var globalExchange = dataStorage.getExchanges().get(dataStorage);
@@ -56,26 +59,25 @@ public class PlanningProductionCycle implements TimelineEvent {
             re.getGatherings().removeIf(g -> g.getSize() <= 0);
             re.getIndustry().removeIf(g -> g.getSize() <= 0);
         });
+        System.out.println("planning");
     }
 
-    private void createNewIndustry() {
-        var freeConsume = getFreeConsume(10000);
-        if (freeConsume == null) {
-            return;
-        }
+    private void placeNewIndustry(TradeGoodType freeConsume) {
         if (factories.get(freeConsume) != null) {
             for (var e : dataStorage.getRegionsEconomy()) {
                 if (!e.getRegion().isCity() || !e.getIndustry().isEmpty()) {
                     continue;
                 }
                 var template = factories.get(freeConsume);
-                var factory = new Factory(template.getKey(), 1, new Company(), 0, 0);
-                var iq = template.getRight().getInputs().stream().mapToInt(in -> 1).toArray();
-                var iqq = template.getRight().getInputs().stream().mapToInt(in -> 1).toArray();
-                var ip = template.getRight().getInputs().stream().mapToInt(in -> 1).toArray();
+                var factory = new Factory(template.getKey(), 1, new Company(), 1000, 100);
+                var quality = template.getRight().getInputs().stream().mapToInt(in -> 1).toArray();
+                var quantity = template.getRight().getInputs().stream().mapToInt(in -> 1).toArray();
+                var price = template.getRight().getInputs().stream().mapToInt(in -> 60).toArray();
                 factory.getLines().add(new ProductionLine(template.getRight(), 1.0, 1,
-                        iq, iqq, ip, 1, 2, 1.0));
+                        quality, quantity, price, 1, 2, 1.0));
                 e.getIndustry().add(factory);
+                template.getRight().getInputs().forEach(i -> placeNewIndustry(i));
+                return;
             }
             System.out.println("\n\n\nNot found suitable place for " + freeConsume + "\n\n\n");
             return;
@@ -90,6 +92,7 @@ public class PlanningProductionCycle implements TimelineEvent {
                 var gathering = new ResourceGathering(template, 1,
                         1.0, new Company(), 1000, 100, 2);
                 e.getGatherings().add(gathering);
+                return;
             }
             System.out.println("\n\n\nNot found suitable place for " + freeConsume + "\n\n\n");
             return;
@@ -105,6 +108,7 @@ public class PlanningProductionCycle implements TimelineEvent {
             int extraD = e.getValue().values().stream().mapToInt(s -> s.getExtraDemand()).sum();
             if (extraD > maxDem) {
                 max = e.getKey();
+                maxDem = extraD;
             }
         }
         if (maxDem > sensivity) {
@@ -117,7 +121,7 @@ public class PlanningProductionCycle implements TimelineEvent {
         if (size > employee.size()) {
             int payment = lExchange.getMinimalWage() * 11 / 10;
             if (basePayment > payment) {
-                return (basePayment * 11 / 10);
+                return (1 + basePayment * 11 / 10);
             } else {
                 return payment;
             }
@@ -128,9 +132,9 @@ public class PlanningProductionCycle implements TimelineEvent {
     private int computePrice(double sold, int exchangePrice, int basePrice) {
         if (sold > 0.9) {
             if (exchangePrice > basePrice) {
-                return (exchangePrice * 11 / 10);
+                return 1+(exchangePrice * 11 / 10);
             } else {
-                return (basePrice * 11 / 10);
+                return 1+(basePrice * 11 / 10);
             }
         } else if (sold < 0.8) {
             if (exchangePrice > basePrice) {
@@ -169,17 +173,17 @@ public class PlanningProductionCycle implements TimelineEvent {
             });
             for (int j = 0; j < l.getTemplate().getInputs().size(); j++) {
                 int inputExchangePrice = globalExchange.getPrice(l.getTemplate().getInputs().get(i), l.getInputsQuality()[i]);
-                if (bought[j] >= l.getInputsQuantity()[j] * l.getSize() && expectedIncomeArr[i] < 1.3) {
+                if (bought[j] >= l.getInputsQuantity()[j] * l.getMaxProduction() && expectedIncomeArr[i] < 1.3) {
                     if (inputExchangePrice < l.getInputsPrice()[i]) {
                         l.getInputsPrice()[i] = inputExchangePrice * 9 / 10;
                     } else {
                         l.getInputsPrice()[i] = l.getInputsPrice()[i] * 9 / 10;
                     }
-                } else if (bought[j] < l.getInputsQuantity()[j]) {
+                } else if (bought[j] < l.getInputsQuantity()[j] * l.getMaxProduction()) {
                     if (inputExchangePrice < l.getInputsPrice()[i]) {
-                        l.getInputsPrice()[i] = l.getInputsPrice()[i] * 12 / 10;
+                        l.getInputsPrice()[i] = 1 + l.getInputsPrice()[i] * 12 / 10;
                     } else {
-                        l.getInputsPrice()[i] = inputExchangePrice * 11 / 10;
+                        l.getInputsPrice()[i] = 1 + inputExchangePrice * 11 / 10;
                     }
                 }
             }
@@ -210,11 +214,11 @@ public class PlanningProductionCycle implements TimelineEvent {
                 if (g.getSize() <= 0) {
                     g.getEmployee().forEach(pop -> {
                         pop.setWorkplace(null);
-                        pop.setPayment(50);
+                        pop.setPayment(0);
                     });
                 }
             }
-        } else if (expectedIncomeTotal > 1.5 && g.getIncome() > 1000 && soldCandidat > 0) {
+        } else if (expectedIncomeTotal > 1.5 && g.getIncome() > 1000 && soldCandidat >= 0) {
             var line = g.getLines().get(soldCandidat);
             line.setSize(line.getSize() + 1);
             g.setSize(g.getSize() + 1);
@@ -244,7 +248,7 @@ public class PlanningProductionCycle implements TimelineEvent {
                 if (g.getSize() <= 0) {
                     g.getEmployee().forEach(pop -> {
                         pop.setWorkplace(null);
-                        pop.setPayment(50);
+                        pop.setPayment(0);
                     });
                 }
             }

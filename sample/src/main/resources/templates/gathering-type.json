@@ -101,7 +101,7 @@
       "MACHINES",
       "CAR"
     ],
-    "baseEffectively": 24,
+    "baseEffectively": 100,
     "consumables": [],
     "resourceRequirements": null,
     "terrainRequirements": "FOREST"
@@ -114,7 +114,7 @@
     "consumables": [
       "FERTILIZER"
     ],
-    "baseEffectively": 24,
+    "baseEffectively": 100,
     "resourceRequirements": null,
     "terrainRequirements": "GRASSLANDS"
   }
