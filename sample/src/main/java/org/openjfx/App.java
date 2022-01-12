@@ -66,7 +66,8 @@ public class App extends Application {
                 "T", new TerrainMode(dataStorage, mapColumns),
                 "R", new ResourceMode(dataStorage, mapColumns),
                 "A", new AreaMode(dataStorage, mapColumns),
-                "M", new AdministrativeMode(dataStorage, mapColumns));
+                "M", new AdministrativeMode(dataStorage, mapColumns),
+                "I", new IndustryMode(dataStorage, mapColumns));
         MapModeController mapModeController = new MapModeController(cachedProvider, providers);
         providers.keySet().forEach(k -> interactiveMap.addKeyListener(k, () -> mapModeController.setMode(k)));
 

@@ -86,6 +86,11 @@ public class DataStorage {
 
     private final List<RegionEconomy> regionsEconomy = new ArrayList<>();
 
+    public RegionEconomy getRegionEconomy(int x, int y) {
+        return regionsEconomy.stream()
+                .filter(r -> r.getRegion().getX() == x && r.getRegion().getY() == y).findAny().orElse(null);
+    }
+
     public RegionControl getRegion(int x, int y) {
         return regions.stream()
                 .filter(r -> r.getX() == x && r.getY() == y).findAny().orElse(null);
